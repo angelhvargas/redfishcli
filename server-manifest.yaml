@@ -1,0 +1,11 @@
+servers:
+  # - type: "idrac"
+  #   hostname: "serv22"
+  #   username: "user1"
+  #   password: "passww22"
+  # - type: "xclarity"
+  #   hostname: "serv11"
+  #   username: "rooty"
+  #   password: "passww33"
+  # Add more servers as needed
+
