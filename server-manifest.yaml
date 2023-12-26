@@ -1,8 +1,8 @@
 servers:
-  # - type: "idrac"
-  #   hostname: "serv22"
-  #   username: "user1"
-  #   password: "passww22"
+  - type: "idrac"
+    hostname: "serv22"
+    username: "root"
+    password: "Pisay77)neddy"
   # - type: "xclarity"
   #   hostname: "serv11"
   #   username: "rooty"

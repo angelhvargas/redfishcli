@@ -62,8 +62,42 @@ to quickly create a Cobra application.`,
 	},
 }
 
+var idracServerHealth = &cobra.Command{
+	Use:   "health",
+	Short: "A brief description of your command",
+	Long: `A longer description that spans multiple lines and likely contains examples
+and usage of using your command. For example:
+
+Cobra is a CLI library for Go that empowers applications.
+This application is a tool to generate the needed files
+to quickly create a Cobra application.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		var servers []config.ServerConfig
+		if cfgFile != "" {
+			// Load configuration from file
+			cfg, err := config.LoadConfig(cfgFile)
+			if err != nil {
+				log.Fatalf("Failed to load config: %v", err)
+			}
+			servers = cfg.Servers
+		} else {
+			// Use the provided flags
+			server := config.ServerConfig{
+				Username: username,
+				Password: password,
+				Hostname: host,
+			}
+			servers = append(servers, server)
+		}
+
+		// Now you have a slice of ServerConfig (servers) to work with
+		// Proceed with your application logic...
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(idracCmd)
+	idracCmd.AddCommand(idracServerHealth)
 
 	// Here you will define your flags and configuration settings.
 

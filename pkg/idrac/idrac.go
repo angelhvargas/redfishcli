@@ -5,9 +5,11 @@ package idrac
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
+
+	"log"
 
 	"github.com/angelhvargas/redfishcli/pkg/config"
 	"github.com/angelhvargas/redfishcli/pkg/model"
@@ -29,6 +31,7 @@ func NewClient(cfg config.IDRACConfig) *Client {
 
 // GetServerInfo gets the server information from iDRAC
 func (c *Client) GetServerInfo() (*model.ServerInfo, error) {
+	log.Println("Making HTTP request to get server info")
 	// Construct the URL
 	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1", c.Config.Hostname)
 
@@ -50,7 +53,7 @@ func (c *Client) GetServerInfo() (*model.ServerInfo, error) {
 	defer resp.Body.Close()
 
 	// Read and parse the response
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -60,6 +63,43 @@ func (c *Client) GetServerInfo() (*model.ServerInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return &info, nil
+}
+
+func (c *Client) GetStorageInfo() (*model.StorageInfo, error) {
+	log.Println("Making HTTP request to get storage info")
+	// Example URL for storage information
+	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1/Storage", c.Config.Hostname)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.SetBasicAuth(c.Config.Username, c.Config.Password)
+
+	httpClient := &http.Client{Timeout: time.Second * 30}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	// Use io.ReadAll instead of ioutil.ReadAll
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var info model.StorageInfo
+	err = json.Unmarshal(body, &info)
+	if err != nil {
+		return nil, err
+	}
+
+	// Additional logic might be required here to adapt to different iDRAC versions
+	// ...
 
 	return &info, nil
 }
