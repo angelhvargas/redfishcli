@@ -51,6 +51,11 @@ to quickly create a Cobra application.`,
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 		// Command logic goes here
+		if cfgFile == "" && (username == "" || password == "" || host == "") {
+			cmd.Help() // Display help text
+			print("test")
+			return
+		}
 	},
 }
 
