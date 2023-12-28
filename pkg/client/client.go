@@ -9,5 +9,5 @@ type ServerClient interface {
 }
 
 type Client struct {
-	// Client fields...
+	Debug bool
 }
