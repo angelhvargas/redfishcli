@@ -1,6 +1,10 @@
 package client
 
-import "github.com/angelhvargas/redfishcli/pkg/model"
+import (
+	"github.com/angelhvargas/redfishcli/pkg/config"
+	"github.com/angelhvargas/redfishcli/pkg/httpclient"
+	"github.com/angelhvargas/redfishcli/pkg/model"
+)
 
 type ServerClient interface {
 	GetServerInfo() (*model.ServerInfo, error)
@@ -8,6 +12,15 @@ type ServerClient interface {
 	// Other common methods
 }
 
-type Client struct {
-	Debug bool
+type BaseClient struct {
+	Config           config.IDRACConfig
+	Debug            bool
+	HTTPClientConfig httpclient.Config
+}
+
+func (bc *BaseClient) doRequest(url string) ([]byte, error) {
+
+	response, err := httpclient.DoRequest(url, bc.Config.Username, bc.Config.Password, bc.HTTPClientConfig)
+
+	return response, err
 }
