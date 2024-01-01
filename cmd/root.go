@@ -25,7 +25,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/angelhvargas/redfishcli/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -51,11 +50,7 @@ to quickly create a Cobra application.`,
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 		// Command logic goes here
-		if cfgFile == "" && (username == "" || password == "" || host == "") {
-			cmd.Help() // Display help text
-			print("test")
-			return
-		}
+
 	},
 }
 
@@ -63,7 +58,6 @@ to quickly create a Cobra application.`,
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	err := rootCmd.Execute()
-	logger.Log.Info("Application started")
 	if err != nil {
 		os.Exit(1)
 	}
