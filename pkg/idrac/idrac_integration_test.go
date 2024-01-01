@@ -22,9 +22,11 @@ func TestIDRACClientIntegration(t *testing.T) {
 	}
 
 	client := NewClient(config.IDRACConfig{
-		Hostname: hostname,
-		Username: os.Getenv("IDRAC_USERNAME"),
-		Password: os.Getenv("IDRAC_PASSWORD"),
+		BMCConnConfig: config.BMCConnConfig{
+			Hostname: hostname,
+			Username: os.Getenv("IDRAC_USERNAME"),
+			Password: os.Getenv("IDRAC_PASSWORD"),
+		},
 	})
 
 	t.Run("GetServerInfo", func(t *testing.T) {
@@ -68,9 +70,11 @@ func TestIDRACClientIntegration_GetRAIDInfo(t *testing.T) {
 	}
 
 	client := NewClient(config.IDRACConfig{
-		Hostname: hostname,
-		Username: os.Getenv("IDRAC_USERNAME"),
-		Password: os.Getenv("IDRAC_PASSWORD"),
+		BMCConnConfig: config.BMCConnConfig{
+			Hostname: hostname,
+			Username: os.Getenv("IDRAC_USERNAME"),
+			Password: os.Getenv("IDRAC_PASSWORD"),
+		},
 	})
 
 	client.HTTPClientConfig = httpclient.DefaultConfig()
