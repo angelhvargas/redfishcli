@@ -22,9 +22,11 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/angelhvargas/redfishcli/pkg/config"
+	"github.com/angelhvargas/redfishcli/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -89,6 +91,11 @@ to quickly create a Cobra application.`,
 			}
 			servers = append(servers, server)
 		}
+		for _, server := range servers {
+			fmt.Printf("Type: %s, Hostname: %s, Username: %s, Password: %s\n",
+				server.Type, server.Hostname, server.Username, server.Password)
+		}
+		logger.Log.Info("Server Health called")
 
 		// Now you have a slice of ServerConfig (servers) to work with
 		// Proceed with your application logic...
