@@ -30,10 +30,11 @@ import (
 )
 
 var (
-	cfgFile  string
-	username string
-	password string
-	host     string
+	cfgFile      string
+	bmc_username string
+	bmc_password string
+	bmc_host     string
+	bmc_type     string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -71,10 +72,10 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.redfishcli.yaml)")
-	rootCmd.PersistentFlags().StringVarP(&username, "username", "u", "", "username for server")
-	rootCmd.PersistentFlags().StringVarP(&password, "password", "p", "", "password for server")
-	rootCmd.PersistentFlags().StringVarP(&host, "host", "t", "", "hostname of the server")
-
+	rootCmd.PersistentFlags().StringVarP(&bmc_username, "username", "u", "root", "username for server")
+	rootCmd.PersistentFlags().StringVarP(&bmc_password, "password", "p", "", "password for server")
+	rootCmd.PersistentFlags().StringVarP(&bmc_host, "host", "n", "", "hostname of the server")
+	rootCmd.PersistentFlags().StringVarP(&bmc_type, "bmc-type", "t", "", "BMC type (iDRAC or xClarity)")
 }
 
 // initConfig reads in config file and ENV variables if set.

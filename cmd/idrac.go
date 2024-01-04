@@ -52,9 +52,9 @@ to quickly create a Cobra application.`,
 		} else {
 			// Use the provided flags
 			server := config.ServerConfig{
-				Username: username,
-				Password: password,
-				Hostname: host,
+				Username: bmc_username,
+				Password: bmc_password,
+				Hostname: bmc_host,
 			}
 			servers = append(servers, server)
 		}
@@ -85,9 +85,9 @@ to quickly create a Cobra application.`,
 		} else {
 			// Use the provided flags
 			server := config.ServerConfig{
-				Username: username,
-				Password: password,
-				Hostname: host,
+				Username: bmc_username,
+				Password: bmc_password,
+				Hostname: bmc_host,
 			}
 			servers = append(servers, server)
 		}
