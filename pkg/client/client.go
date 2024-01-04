@@ -9,6 +9,8 @@ import (
 type ServerClient interface {
 	GetServerInfo() (*model.ServerInfo, error)
 	GetStorageInfo() (*model.StorageInfo, error)
+	GetRAIDControllers() ([]model.RAIDController, error)
+	GetRAIDVolumeInfo(volumeURL string) (*model.RAIDVolume, error)
 	// Other common methods
 }
 

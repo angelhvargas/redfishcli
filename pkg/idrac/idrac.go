@@ -160,6 +160,7 @@ func (c *Client) fetchDrive(url string) (*model.Drive, error) {
 
 func (c *Client) GetRAIDControllers() ([]model.RAIDController, error) {
 	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1/Storage", c.Config.Hostname)
+	print(url)
 	body, err := httpclient.DoRequest(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig)
 	if err != nil {
 		return nil, err
