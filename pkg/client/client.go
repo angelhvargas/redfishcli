@@ -21,8 +21,6 @@ type BaseClient struct {
 }
 
 func (bc *BaseClient) doRequest(url string) ([]byte, error) {
-
 	response, err := httpclient.DoRequest(url, bc.Config.Username, bc.Config.Password, bc.HTTPClientConfig)
-
 	return response, err
 }
