@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/angelhvargas/redfishcli/pkg/logger"
 )
 
 type Config struct {
@@ -24,6 +26,7 @@ func DefaultConfig() Config {
 }
 
 func DoRequest(url, username, password string, config Config) ([]byte, error) {
+	logger.Log.Printf("Doing http request to: %s", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -40,6 +43,7 @@ func DoRequest(url, username, password string, config Config) ([]byte, error) {
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
+		logger.Log.Errorf("Error: %s", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
