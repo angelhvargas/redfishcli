@@ -185,3 +185,22 @@ func (c *Client) GetRAIDVolumeInfo(volumeURL string) (*model.RAIDVolume, error) 
 
 	return &volume, nil
 }
+
+func (c *Client) GetRAIDControllerInfo(controllerId string) (*model.RAIDControllerDetails, error) {
+	url := fmt.Sprintf("https://%s", controllerId)
+	logger.Log.Println("calling redfish:", url)
+	body, err := httpclient.DoRequest(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig)
+	if err != nil {
+		logger.Log.Errorln(err.Error())
+		return nil, err
+	}
+
+	var raidControllerDetails model.RAIDControllerDetails
+	if err := json.Unmarshal(body, &raidControllerDetails); err != nil {
+		logger.Log.Errorln(err.Error())
+		return nil, err
+	}
+
+	return &raidControllerDetails, nil
+
+}

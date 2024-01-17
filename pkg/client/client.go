@@ -11,6 +11,7 @@ type ServerClient interface {
 	GetStorageInfo() (*model.StorageInfo, error)
 	GetRAIDControllers() ([]model.RAIDController, error)
 	GetRAIDVolumeInfo(volumeURL string) (*model.RAIDVolume, error)
+	GetRAIDControllerInfo(RAIDURL string) (*model.RAIDControllerDetails, error)
 	// Other common methods
 }
 
