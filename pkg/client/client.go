@@ -11,6 +11,7 @@ type ServerClient interface {
 	GetStorageInfo() (*model.StorageInfo, error)
 	GetRAIDControllers() ([]model.RAIDController, error)
 	GetRAIDVolumeInfo(volumeURL string) (*model.RAIDVolume, error)
+	GetRAIDControllerInfo(RAIDURL string) (*model.RAIDControllerDetails, error)
 	// Other common methods
 }
 
@@ -21,8 +22,6 @@ type BaseClient struct {
 }
 
 func (bc *BaseClient) doRequest(url string) ([]byte, error) {
-
 	response, err := httpclient.DoRequest(url, bc.Config.Username, bc.Config.Password, bc.HTTPClientConfig)
-
 	return response, err
 }
