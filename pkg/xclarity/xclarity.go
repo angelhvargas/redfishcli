@@ -7,6 +7,7 @@ import (
 
 	"github.com/angelhvargas/redfishcli/pkg/config"
 	"github.com/angelhvargas/redfishcli/pkg/httpclient"
+	"github.com/angelhvargas/redfishcli/pkg/logger"
 	"github.com/angelhvargas/redfishcli/pkg/model"
 )
 
@@ -156,9 +157,10 @@ func (c *Client) fetchDrive(url string) (*model.Drive, error) {
 
 func (c *Client) GetRAIDControllers() ([]model.RAIDController, error) {
 	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1/Storage", c.Config.Hostname)
-	print(url)
+	logger.Log.Printf(url)
 	body, err := httpclient.DoRequest(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig)
 	if err != nil {
+		logger.Log.Errorf(err.Error())
 		return nil, err
 	}
 	log.Printf("Raw server info response: %s\n", string(body))
@@ -182,4 +184,23 @@ func (c *Client) GetRAIDVolumeInfo(volumeURL string) (*model.RAIDVolume, error) 
 	}
 
 	return &volume, nil
+}
+
+func (c *Client) GetRAIDControllerInfo(controllerId string) (*model.RAIDControllerDetails, error) {
+	url := fmt.Sprintf("https://%s", controllerId)
+	logger.Log.Println("calling redfish:", url)
+	body, err := httpclient.DoRequest(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig)
+	if err != nil {
+		logger.Log.Errorln(err.Error())
+		return nil, err
+	}
+
+	var raidControllerDetails model.RAIDControllerDetails
+	if err := json.Unmarshal(body, &raidControllerDetails); err != nil {
+		logger.Log.Errorln(err.Error())
+		return nil, err
+	}
+
+	return &raidControllerDetails, nil
+
 }

@@ -1,6 +1,6 @@
 servers:
   - type: "idrac"
-    hostname: "serv22"
+    hostname: "192.168.254.58"
     username: "root"
     password: "Pisay77)neddy"
   # - type: "xclarity"
