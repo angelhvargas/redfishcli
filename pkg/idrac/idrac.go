@@ -5,6 +5,7 @@ package idrac
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"log"
 
@@ -44,7 +45,6 @@ func (c *Client) GetServerInfo() (*model.ServerInfo, error) {
 		return nil, err
 	}
 
-	log.Printf("Raw server info response: %s\n", string(body))
 	var info model.ServerInfo
 	err = json.Unmarshal(body, &info)
 	if err != nil {
@@ -103,7 +103,6 @@ func (c *Client) GetDrivesInfo() ([]model.Drive, error) {
 }
 
 func (c *Client) fetchStorageCollection(url string) (*model.StorageCollection, error) {
-	log.Printf("Hostname: %s, Username: %s", c.Config.Hostname, c.Config.Username)
 
 	body, err := httpclient.DoRequest(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig)
 	if err != nil {
@@ -161,18 +160,45 @@ func (c *Client) fetchDrive(url string) (*model.Drive, error) {
 
 func (c *Client) GetRAIDControllers() ([]model.RAIDController, error) {
 	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1/Storage", c.Config.Hostname)
-	logger.Log.Println(url)
+	logger.Log.Println("calling redfish:", url)
 	body, err := httpclient.DoRequest(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig)
 	if err != nil {
 		return nil, err
 	}
-	logger.Log.Printf("Raw server info response: %s\n", string(body))
-	var storageResp model.StorageResponse
+
+	var storageResp model.StorageCollection
 	if err := json.Unmarshal(body, &storageResp); err != nil {
 		return nil, err
 	}
 
-	return storageResp.Members, nil
+	var RAIDMembers model.StorageResponse
+	for _, member := range storageResp.Members {
+		if strings.Contains(member.ID, "RAID") {
+			logger.Log.Printf("the RAID is %s", member.ID)
+			RAIDMembers.Members = append(RAIDMembers.Members, model.RAIDController{ID: member.ID})
+		}
+	}
+
+	return RAIDMembers.Members, nil
+}
+
+func (c *Client) GetRAIDControllerInfo(controllerId string) (*model.RAIDControllerDetails, error) {
+	url := fmt.Sprintf("https://%s%s", c.Config.Hostname, controllerId)
+	logger.Log.Println("calling redfish:", url)
+	body, err := httpclient.DoRequest(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig)
+	if err != nil {
+		logger.Log.Errorln(err.Error())
+		return nil, err
+	}
+
+	var raidControllerDetails model.RAIDControllerDetails
+	if err := json.Unmarshal(body, &raidControllerDetails); err != nil {
+		logger.Log.Errorln(err.Error())
+		return nil, err
+	}
+
+	return &raidControllerDetails, nil
+
 }
 
 func (c *Client) GetRAIDVolumeInfo(volumeURL string) (*model.RAIDVolume, error) {

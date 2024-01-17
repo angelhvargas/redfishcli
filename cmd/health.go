@@ -23,7 +23,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/angelhvargas/redfishcli/pkg/client"
 	"github.com/angelhvargas/redfishcli/pkg/config"
@@ -31,6 +30,7 @@ import (
 	"github.com/angelhvargas/redfishcli/pkg/logger"
 	"github.com/angelhvargas/redfishcli/pkg/xclarity"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 // healthCmd represents the health command
@@ -45,28 +45,25 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("health called")
-
-		// bmc_type := bmc_type
-		hostname := os.Getenv("BMC_HOSTNAME")
-		logger.Log.Printf("connecting to %s as user %s", hostname, os.Getenv("BMC_USERNAME"))
+		logger.Log.Printf("connecting to %s as user %s", bmc_host, bmc_username)
 		var bmc_client client.ServerClient
 
 		if bmc_type == "idrac" {
 			logger.Log.Infoln("idrac client created...")
 			bmc_client = idrac.NewClient(config.IDRACConfig{
 				BMCConnConfig: config.BMCConnConfig{
-					Hostname: hostname,
-					Username: os.Getenv("BMC_USERNAME"),
-					Password: os.Getenv("BMC_PASSWORD"),
+					Hostname: bmc_host,
+					Username: bmc_username,
+					Password: bmc_password,
 				},
 			})
 
 		} else {
 			bmc_client = xclarity.NewClient(config.XClarityConfig{
 				BMCConnConfig: config.BMCConnConfig{
-					Hostname: hostname,
-					Username: os.Getenv("BMC_USERNAME"),
-					Password: os.Getenv("BMC_PASSWORD"),
+					Hostname: bmc_host,
+					Username: bmc_username,
+					Password: bmc_password,
 				},
 			})
 			logger.Log.Infoln("xclarity client created...")
@@ -74,17 +71,34 @@ to quickly create a Cobra application.`,
 
 		controllers, err := bmc_client.GetRAIDControllers()
 		if err != nil {
-			panic(err)
+			panic(err.Error())
 		}
 
 		for _, controller := range controllers {
+			logger.Log.Printf("controller id: %s\n", controller.ID)
+			details, err := bmc_client.GetRAIDControllerInfo(controller.ID)
+
+			if err != nil {
+				logger.Log.Errorln(err)
+			}
+			logger.Log.Println(details.Name)
+
+			// Marshal the details into YAML
+			yamlData, err := yaml.Marshal(details)
+			if err != nil {
+				fmt.Println("Error marshalling to YAML:", err)
+				return
+			}
+
+			// Print the YAML
+			fmt.Println(string(yamlData))
 			for _, volumeRef := range controller.Volumes {
 				volume, err := bmc_client.GetRAIDVolumeInfo(volumeRef.ID)
 				if err != nil {
 					panic(err)
 				}
-				fmt.Sprintln("controller.id %s\n", controller.ID)
-				fmt.Sprintln("volume.id %s\n", volume.Name)
+				fmt.Printf("controller.id %s\n", controller.ID)
+				fmt.Printf("volume.id %s\n", volume.Name)
 				// Add more assertions as necessary
 			}
 		}
