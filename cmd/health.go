@@ -33,6 +33,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var (
+	drives bool
+)
+
 // healthCmd represents the health command
 var healthCmd = &cobra.Command{
 	Use:   "health",
@@ -44,8 +48,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("health called")
-		logger.Log.Printf("connecting to %s as user %s", bmc_host, bmc_username)
+		logger.Log.Info("connecting to %s as user %s", bmc_host, bmc_username)
 		var bmc_client client.ServerClient
 
 		if bmc_type == "idrac" {
@@ -71,6 +74,7 @@ to quickly create a Cobra application.`,
 
 		controllers, err := bmc_client.GetRAIDControllers()
 		if err != nil {
+			logger.Log.Error(err.Error())
 			panic(err.Error())
 		}
 
@@ -79,17 +83,32 @@ to quickly create a Cobra application.`,
 			details, err := bmc_client.GetRAIDControllerInfo(controller.ID)
 
 			if err != nil {
-				logger.Log.Errorln(err)
+				logger.Log.Error(err.Error())
+				panic(err.Error())
 			}
-			logger.Log.Println(details.Name)
+
+			if drives {
+				logger.Log.Info("looking up for DRIVES")
+				for _, id := range details.Drives {
+					bmc_client.GetRAIDDriveDetails(id.ID)
+					// Marshal the details into YAML
+					yamlData, err := yaml.Marshal(details)
+					if err != nil {
+						logger.Log.Error(err.Error())
+						return
+					}
+					// Print the YAML
+					fmt.Println(string(yamlData))
+				}
+
+			}
 
 			// Marshal the details into YAML
 			yamlData, err := yaml.Marshal(details)
 			if err != nil {
-				fmt.Println("Error marshalling to YAML:", err)
+				logger.Log.Error(err.Error())
 				return
 			}
-
 			// Print the YAML
 			fmt.Println(string(yamlData))
 			for _, volumeRef := range controller.Volumes {
@@ -108,6 +127,7 @@ to quickly create a Cobra application.`,
 
 func init() {
 	raidCmd.AddCommand(healthCmd)
+	healthCmd.PersistentFlags().BoolVarP(&drives, "drives", "", false, "return RAID controller member drives health")
 
 	// Here you will define your flags and configuration settings.
 
