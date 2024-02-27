@@ -48,7 +48,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger.Log.Info("connecting to %s as user %s", bmc_host, bmc_username)
+		logger.Log.Info(fmt.Sprintf("connecting to %s as user %s", bmc_host, bmc_username))
 		var bmc_client client.ServerClient
 
 		if bmc_type == "idrac" {
