@@ -12,6 +12,7 @@ type ServerClient interface {
 	GetRAIDControllers() ([]model.RAIDController, error)
 	GetRAIDVolumeInfo(volumeURL string) (*model.RAIDVolume, error)
 	GetRAIDControllerInfo(RAIDURL string) (*model.RAIDControllerDetails, error)
+	GetRAIDDriveDetails(driveURL string) (*model.Drive, error)
 	// Other common methods
 }
 
