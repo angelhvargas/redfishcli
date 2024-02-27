@@ -28,7 +28,6 @@ func NewClient(cfg config.XClarityConfig) *Client {
 
 // GetServerInfo gets the server information from iDRAC
 func (c *Client) GetServerInfo() (*model.ServerInfo, error) {
-	log.Println("Making HTTP request to get server info")
 	// Construct the URL
 	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1", c.Config.Hostname)
 
@@ -51,7 +50,6 @@ func (c *Client) GetServerInfo() (*model.ServerInfo, error) {
 }
 
 func (c *Client) GetStorageInfo() (*model.StorageInfo, error) {
-	log.Println("Making HTTP request to get storage info")
 	// Example URL for storage information
 	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1/Storage", c.Config.Hostname)
 	log.Printf("Hostname: %s, Username: %s", c.Config.Hostname, c.Config.Username)
@@ -188,19 +186,33 @@ func (c *Client) GetRAIDVolumeInfo(volumeURL string) (*model.RAIDVolume, error) 
 
 func (c *Client) GetRAIDControllerInfo(controllerId string) (*model.RAIDControllerDetails, error) {
 	url := fmt.Sprintf("https://%s", controllerId)
-	logger.Log.Println("calling redfish:", url)
+	logger.Log.Info("calling redfish:", url)
 	body, err := httpclient.DoRequest(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig)
 	if err != nil {
-		logger.Log.Errorln(err.Error())
+		logger.Log.Error(err.Error())
 		return nil, err
 	}
 
 	var raidControllerDetails model.RAIDControllerDetails
 	if err := json.Unmarshal(body, &raidControllerDetails); err != nil {
-		logger.Log.Errorln(err.Error())
+		logger.Log.Error(err.Error())
 		return nil, err
 	}
 
 	return &raidControllerDetails, nil
 
+}
+
+func (c *Client) GetRAIDDriveDetails(driveUrl string) (*model.Drive, error) {
+	url := fmt.Sprint("http://%%", c.Config.Hostname, driveUrl)
+	body, err := httpclient.DoRequest(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig)
+	if err != nil {
+		logger.Log.Error(err.Error())
+	}
+
+	var drive model.Drive
+	if err := json.Unmarshal(body, &drive); err != nil {
+		logger.Log.Error(err.Error())
+	}
+	return &drive, nil
 }
