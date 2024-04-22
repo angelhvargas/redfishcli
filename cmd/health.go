@@ -22,15 +22,17 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/angelhvargas/redfishcli/pkg/client"
 	"github.com/angelhvargas/redfishcli/pkg/config"
 	"github.com/angelhvargas/redfishcli/pkg/idrac"
 	"github.com/angelhvargas/redfishcli/pkg/logger"
+	"github.com/angelhvargas/redfishcli/pkg/model"
 	"github.com/angelhvargas/redfishcli/pkg/xclarity"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -78,49 +80,55 @@ to quickly create a Cobra application.`,
 			panic(err.Error())
 		}
 
+		var healthReports []*model.RAIDHealthReport
+
 		for _, controller := range controllers {
-			logger.Log.Printf("controller id: %s\n", controller.ID)
 			details, err := bmc_client.GetRAIDControllerInfo(controller.ID)
 
 			if err != nil {
 				logger.Log.Error(err.Error())
-				panic(err.Error())
+				continue // Continue to the next controller if there's an error
+			}
+
+			healthReport := model.RAIDHealthReport{
+				ID:           details.ID,
+				Name:         details.Name,
+				HealthStatus: details.Status.Health,
+				State:        details.Status.State,
+				Drives:       []model.Drive{},
 			}
 
 			if drives {
-				logger.Log.Info("looking up for DRIVES")
-				for _, id := range details.Drives {
-					bmc_client.GetRAIDDriveDetails(id.ID)
-					// Marshal the details into YAML
-					yamlData, err := yaml.Marshal(details)
-					if err != nil {
-						logger.Log.Error(err.Error())
-						return
+
+				for _, driveRef := range details.Drives {
+					// Split the @odata.id string at the colon
+					splitURL := strings.Split(driveRef.ID, ":")
+					if len(splitURL) > 0 {
+						// The first part of the split result is the valid URL
+						validURL := splitURL[0]
+						driveDetails, err := bmc_client.GetRAIDDriveDetails(validURL)
+						if err != nil {
+							logger.Log.Error(err.Error())
+							continue // Continue to the next drive if there's an error
+						}
+						healthReport.Drives = append(healthReport.Drives, *driveDetails)
 					}
-					// Print the YAML
-					fmt.Println(string(yamlData))
 				}
-
+				healthReport.DrivesCount = int8(len(details.Drives))
 			}
 
-			// Marshal the details into YAML
-			yamlData, err := yaml.Marshal(details)
-			if err != nil {
-				logger.Log.Error(err.Error())
-				return
-			}
-			// Print the YAML
-			fmt.Println(string(yamlData))
-			for _, volumeRef := range controller.Volumes {
-				volume, err := bmc_client.GetRAIDVolumeInfo(volumeRef.ID)
-				if err != nil {
-					panic(err)
-				}
-				fmt.Printf("controller.id %s\n", controller.ID)
-				fmt.Printf("volume.id %s\n", volume.Name)
-				// Add more assertions as necessary
-			}
+			healthReports = append(healthReports, &healthReport)
 		}
+
+		// Marshal the health reports into JSON
+		jsonData, err := json.Marshal(healthReports)
+		if err != nil {
+			logger.Log.Error(err.Error())
+			return
+		}
+
+		// Print the JSON
+		fmt.Println(string(jsonData))
 
 	},
 }

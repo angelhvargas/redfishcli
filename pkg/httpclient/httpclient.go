@@ -14,7 +14,6 @@ import (
 type Config struct {
 	Timeout       time.Duration
 	SkipTLSVerify bool
-	// Add other configuration fields as needed
 }
 
 // DefaultConfig provides default settings for the HTTP client.

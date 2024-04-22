@@ -27,7 +27,6 @@ func NewClient(cfg config.IDRACConfig) *Client {
 
 // fetchAndUnmarshal performs a HTTP GET request to the specified URL and unmarshals the response into the given target structure.
 func (c *Client) fetchAndUnmarshal(url string, target interface{}) error {
-	logger.Log.Infof("Fetching data from: %s", url)
 	body, err := httpclient.DoRequest(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig)
 	if err != nil {
 		logger.Log.Errorf("Error fetching data: %s", err)
@@ -130,7 +129,8 @@ func (c *Client) GetRAIDVolumeInfo(volumeURL string) (*model.RAIDVolume, error) 
 // GetRAIDDriveDetails retrieves detailed information for a specific drive.
 func (c *Client) GetRAIDDriveDetails(driveUrl string) (*model.Drive, error) {
 	var drive model.Drive
-	if err := c.fetchAndUnmarshal(driveUrl, &drive); err != nil {
+	url := fmt.Sprintf("https://%s%s", c.Config.Hostname, driveUrl)
+	if err := c.fetchAndUnmarshal(url, &drive); err != nil {
 		return nil, err
 	}
 	return &drive, nil
