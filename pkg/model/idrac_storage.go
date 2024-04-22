@@ -34,11 +34,12 @@ type RAIDController struct {
 }
 
 type RAIDControllerDetails struct {
-	ID                      string               `json:"Id"`
-	Name                    string               `json:"Name"`
-	Description             string               `json:"Description"`
-	Drives                  []OdataObject        `json:"Drives"`
-	DrivesCount             int                  `json:"Drives@odata.count"`
+	ID          string        `json:"Id"`
+	Name        string        `json:"Name"`
+	Description string        `json:"Description"`
+	Drives      []OdataObject `json:"Drives"`
+	DrivesCount int           `json:"Drives@odata.count"`
+	// we need the links to get the drive info.
 	Links                   RAIDControllerLinks  `json:"Links"`
 	Status                  RAIDControllerStatus `json:"Status"`
 	StorageControllers      []StorageController  `json:"StorageControllers"`
@@ -163,9 +164,10 @@ type DriveStatus struct {
 // RAID health
 
 type RAIDHealthReport struct {
-	ID           string `json:"id"`
-	Name         string `json:"Name"`
-	DrivesCount  int8   `json:"drivecount"`
-	HealthStatus string `json:"healthstatus"`
-	State        string `json:"enable"`
+	ID           string  `json:"id"`
+	Name         string  `json:"Name"`
+	Drives       []Drive `json:"drives"`
+	DrivesCount  int8    `json:"DrivesCount"`
+	HealthStatus string  `json:"healthstatus"`
+	State        string  `json:"enable"`
 }
