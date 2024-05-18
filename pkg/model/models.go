@@ -3,6 +3,7 @@
 package model
 
 type ServerInfo struct {
+	ID           string `json:"ID"`
 	SerialNumber string `json:"SerialNumber"`
 	PowerStatus  string `json:"PowerStatus"`
 	Health       string `json:"Health"`

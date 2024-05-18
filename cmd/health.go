@@ -50,25 +50,25 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger.Log.Info(fmt.Sprintf("connecting to %s as user %s", bmc_host, bmc_username))
+		logger.Log.Info(fmt.Sprintf("connecting to %s as user %s", bmcHost, bmcUsername))
 		var bmc_client client.ServerClient
 
-		if bmc_type == "idrac" {
+		if bmcType == "idrac" {
 			logger.Log.Infoln("idrac client created...")
 			bmc_client = idrac.NewClient(config.IDRACConfig{
 				BMCConnConfig: config.BMCConnConfig{
-					Hostname: bmc_host,
-					Username: bmc_username,
-					Password: bmc_password,
+					Hostname: bmcHost,
+					Username: bmcUsername,
+					Password: bmcPassword,
 				},
 			})
 
 		} else {
 			bmc_client = xclarity.NewClient(config.XClarityConfig{
 				BMCConnConfig: config.BMCConnConfig{
-					Hostname: bmc_host,
-					Username: bmc_username,
-					Password: bmc_password,
+					Hostname: bmcHost,
+					Username: bmcUsername,
+					Password: bmcPassword,
 				},
 			})
 			logger.Log.Infoln("xclarity client created...")

@@ -1,9 +1,8 @@
-// pkg/httpclient/httpclient.go
-
 package httpclient
 
 import (
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -19,12 +18,16 @@ type Config struct {
 // DefaultConfig provides default settings for the HTTP client.
 func DefaultConfig() Config {
 	return Config{
-		Timeout:       30 * time.Second,
+		Timeout:       60 * time.Second,
 		SkipTLSVerify: true,
 	}
 }
 
-func DoRequest(url, username, password string, config Config) ([]byte, error) {
+// Function variable for mocking purposes
+var DoRequest = doRequest
+
+// doRequest performs an HTTP GET request.
+func doRequest(url, username, password string, config Config) ([]byte, error) {
 	logger.Log.Printf("Doing http request to: %s", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -34,9 +37,9 @@ func DoRequest(url, username, password string, config Config) ([]byte, error) {
 	req.SetBasicAuth(username, password)
 
 	httpClient := &http.Client{
-		Timeout: time.Second * 30,
+		Timeout: config.Timeout,
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: config.SkipTLSVerify},
 		},
 	}
 
@@ -46,6 +49,12 @@ func DoRequest(url, username, password string, config Config) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		err := fmt.Errorf("server returned status code %d", resp.StatusCode)
+		logger.Log.Errorf("Error: %s", err)
+		return nil, err
+	}
 
 	return io.ReadAll(resp.Body)
 }
