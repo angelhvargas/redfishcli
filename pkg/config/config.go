@@ -7,10 +7,7 @@ import (
 )
 
 type BMCConfig struct {
-	Type           string
-	IDRACConfig    IDRACConfig
-	XClarityConfig XClarityConfig
-	Servers        []ServerConfig
+	Servers []ServerConfig `yaml:"servers"`
 }
 
 type ServerConfig struct {
@@ -19,10 +16,6 @@ type ServerConfig struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 }
-
-// type Config struct {
-// 	Servers []ServerConfig `yaml:"servers"`
-// }
 
 type BMCConnConfig struct {
 	Hostname       string
@@ -39,7 +32,7 @@ type XClarityConfig struct {
 	BMCConnConfig
 }
 
-// LoadConfig reads a YAML configuration file and unmarshals it into a Config struct.
+// LoadConfig reads a YAML configuration file and unmarshals it into a BMCConfig struct.
 func LoadConfig(path string) (*BMCConfig, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -53,4 +46,34 @@ func LoadConfig(path string) (*BMCConfig, error) {
 	}
 
 	return &cfg, nil
+}
+
+// GetDefaultConfigPath returns the default configuration file path.
+func GetDefaultConfigPath() string {
+	return os.Getenv("HOME") + "/.redfishcli/config.yaml"
+}
+
+// LoadConfigFromDefaultPath loads the configuration from the default path.
+func LoadConfigFromDefaultPath() (*BMCConfig, error) {
+	return LoadConfig(GetDefaultConfigPath())
+}
+
+// LoadConfigOrEnv loads the configuration from the specified path, or from environment variables if the path is empty.
+func LoadConfigOrEnv(path, bmcType, username, password, hostname string) (*BMCConfig, error) {
+	if path != "" {
+		return LoadConfig(path)
+	}
+
+	server := ServerConfig{
+		Type:     bmcType,
+		Hostname: hostname,
+		Username: username,
+		Password: password,
+	}
+
+	cfg := &BMCConfig{
+		Servers: []ServerConfig{server},
+	}
+
+	return cfg, nil
 }
