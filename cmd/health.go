@@ -1,30 +1,9 @@
-/*
-Copyright © 2024 Angel Vargas <angelvargas@outlook.es>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
 package cmd
 
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
+	"sync"
 
 	"github.com/angelhvargas/redfishcli/pkg/client"
 	"github.com/angelhvargas/redfishcli/pkg/config"
@@ -36,88 +15,41 @@ import (
 )
 
 var (
-	drives bool
+	drives     bool
+	configPath string
 )
 
 // healthCmd represents the health command
 var healthCmd = &cobra.Command{
 	Use:   "health",
 	Short: "Return the Server RAID controllers health",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Long: `This command returns the health status of RAID controllers for specified servers.
+It can also return the health status of member drives if specified with the --drives flag.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger.Log.Info(fmt.Sprintf("connecting to %s as user %s", bmcHost, bmcUsername))
-		var bmc_client client.ServerClient
-
-		if bmcType == "idrac" {
-			logger.Log.Infoln("idrac client created...")
-			bmc_client = idrac.NewClient(config.IDRACConfig{
-				BMCConnConfig: config.BMCConnConfig{
-					Hostname: bmcHost,
-					Username: bmcUsername,
-					Password: bmcPassword,
-				},
-			})
-
-		} else {
-			bmc_client = xclarity.NewClient(config.XClarityConfig{
-				BMCConnConfig: config.BMCConnConfig{
-					Hostname: bmcHost,
-					Username: bmcUsername,
-					Password: bmcPassword,
-				},
-			})
-			logger.Log.Infoln("xclarity client created...")
-		}
-
-		controllers, err := bmc_client.GetRAIDControllers()
+		var servers []config.ServerConfig
+		cfg, err := config.LoadConfigOrEnv(configPath, bmcType, bmcUsername, bmcPassword, bmcHost)
 		if err != nil {
 			logger.Log.Error(err.Error())
-			panic(err.Error())
+			return
+		}
+		servers = cfg.Servers
+
+		var wg sync.WaitGroup
+		healthReportsCh := make(chan *model.RAIDHealthReport, len(servers))
+		errorsCh := make(chan error, len(servers))
+
+		for _, server := range servers {
+			wg.Add(1)
+			go processServer(&wg, server, healthReportsCh, errorsCh)
 		}
 
+		wg.Wait()
+		close(healthReportsCh)
+		close(errorsCh)
+
 		var healthReports []*model.RAIDHealthReport
-
-		for _, controller := range controllers {
-			details, err := bmc_client.GetRAIDControllerInfo(controller.ID)
-
-			if err != nil {
-				logger.Log.Error(err.Error())
-				continue // Continue to the next controller if there's an error
-			}
-
-			healthReport := model.RAIDHealthReport{
-				ID:           details.ID,
-				Name:         details.Name,
-				HealthStatus: details.Status.Health,
-				State:        details.Status.State,
-				Drives:       []model.Drive{},
-			}
-
-			if drives {
-
-				for _, driveRef := range details.Drives {
-					// Split the @odata.id string at the colon
-					splitURL := strings.Split(driveRef.ID, ":")
-					if len(splitURL) > 0 {
-						// The first part of the split result is the valid URL
-						validURL := splitURL[0]
-						driveDetails, err := bmc_client.GetRAIDDriveDetails(validURL)
-						if err != nil {
-							logger.Log.Error(err.Error())
-							continue // Continue to the next drive if there's an error
-						}
-						healthReport.Drives = append(healthReport.Drives, *driveDetails)
-					}
-				}
-				healthReport.DrivesCount = int8(len(details.Drives))
-			}
-
-			healthReports = append(healthReports, &healthReport)
+		for report := range healthReportsCh {
+			healthReports = append(healthReports, report)
 		}
 
 		// Marshal the health reports into JSON
@@ -130,20 +62,86 @@ to quickly create a Cobra application.`,
 		// Print the JSON
 		fmt.Println(string(jsonData))
 
+		// Print errors if any
+		for err := range errorsCh {
+			logger.Log.Error(err.Error())
+		}
 	},
+}
+
+func processServer(wg *sync.WaitGroup, server config.ServerConfig, healthReportsCh chan<- *model.RAIDHealthReport, errorsCh chan<- error) {
+	defer wg.Done()
+
+	var bmcClient client.ServerClient
+	switch server.Type {
+	case "idrac":
+		logger.Log.Infof("Creating iDRAC client for server %s", server.Hostname)
+		bmcClient = idrac.NewClient(config.IDRACConfig{
+			BMCConnConfig: config.BMCConnConfig{
+				Hostname: server.Hostname,
+				Username: server.Username,
+				Password: server.Password,
+			},
+		})
+	case "xclarity":
+		logger.Log.Infof("Creating XClarity client for server %s", server.Hostname)
+		bmcClient = xclarity.NewClient(config.XClarityConfig{
+			BMCConnConfig: config.BMCConnConfig{
+				Hostname: server.Hostname,
+				Username: server.Username,
+				Password: server.Password,
+			},
+		})
+	default:
+		err := fmt.Errorf("unsupported BMC type: %s", server.Type)
+		logger.Log.Error(err.Error())
+		errorsCh <- err
+		return
+	}
+	// get the RAID controllers list (servers can have more than one)
+	controllers, err := bmcClient.GetRAIDControllers()
+	if err != nil {
+		logger.Log.Error(err.Error())
+		errorsCh <- err
+		return
+	}
+
+	// get the data for each RAID controllers.
+	for _, controller := range controllers {
+		raidCtrldetails, err := bmcClient.GetRAIDControllerInfo(controller.ID)
+		if err != nil {
+			logger.Log.Error(err.Error())
+			errorsCh <- err
+			continue
+		}
+
+		healthReport := &model.RAIDHealthReport{
+			ID:           raidCtrldetails.ID,
+			Name:         raidCtrldetails.Name,
+			HealthStatus: raidCtrldetails.Status.Health,
+			State:        raidCtrldetails.Status.State,
+			Drives:       []model.Drive{},
+		}
+
+		if drives {
+			for _, driveRef := range raidCtrldetails.Drives {
+				if len(driveRef.ID) > 0 {
+					driveDetails, err := bmcClient.GetRAIDDriveDetails(driveRef.ID)
+					if err != nil {
+						logger.Log.Error(err.Error())
+						errorsCh <- err
+						continue
+					}
+					healthReport.Drives = append(healthReport.Drives, *driveDetails)
+				}
+			}
+			healthReport.DrivesCount = int8(len(raidCtrldetails.Drives))
+		}
+		healthReportsCh <- healthReport
+	}
 }
 
 func init() {
 	raidCmd.AddCommand(healthCmd)
 	healthCmd.PersistentFlags().BoolVarP(&drives, "drives", "", false, "return RAID controller member drives health")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// healthCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// healthCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

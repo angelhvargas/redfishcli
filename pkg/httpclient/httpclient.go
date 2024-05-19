@@ -44,12 +44,13 @@ func doRequest(url, username, password string, config Config) ([]byte, error) {
 	}
 
 	resp, err := httpClient.Do(req)
+
 	if err != nil {
 		logger.Log.Errorf("Error: %s", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
-
+	logger.Log.Info(resp.StatusCode)
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		err := fmt.Errorf("server returned status code %d", resp.StatusCode)
 		logger.Log.Errorf("Error: %s", err)
