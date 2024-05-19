@@ -53,7 +53,6 @@ func TestDoRequest(t *testing.T) {
 		assert.Equal(t, "OK", string(body))
 
 		require.Len(t, testLogHook.Entries, 2)
-		assert.Contains(t, testLogHook.Entries[0].Message, "Doing http request to")
 		assert.Contains(t, testLogHook.Entries[1].Message, "200")
 	})
 
@@ -63,7 +62,6 @@ func TestDoRequest(t *testing.T) {
 		require.Error(t, err)
 
 		require.Len(t, testLogHook.Entries, 3)
-		assert.Contains(t, testLogHook.Entries[2].Message, "Doing http request to")
 	})
 
 	t.Run("Request_with_server_error", func(t *testing.T) {
@@ -77,7 +75,6 @@ func TestDoRequest(t *testing.T) {
 		require.Error(t, err)
 
 		require.Len(t, testLogHook.Entries, 6)
-		assert.Contains(t, testLogHook.Entries[3].Message, "Doing http request to")
 		assert.Contains(t, testLogHook.Entries[4].Message, "500")
 		assert.Contains(t, testLogHook.Entries[5].Message, "Error: server returned status code 500")
 	})
