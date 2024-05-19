@@ -107,17 +107,17 @@ type RAIDVolume struct {
 }
 
 type Drive struct {
-	OdataContext                  string        `json:"@odata.context"`
-	OdataID                       string        `json:"@odata.id"`
-	OdataType                     string        `json:"@odata.type"`
-	Actions                       DriveActions  `json:"Actions"`
-	Assembly                      OdataObject   `json:"Assembly"`
-	BlockSizeBytes                int           `json:"BlockSizeBytes"`
-	CapableSpeedGbs               int           `json:"CapableSpeedGbs"`
-	CapacityBytes                 int64         `json:"CapacityBytes"`
-	Description                   string        `json:"Description"`
-	EncryptionAbility             string        `json:"EncryptionAbility"`
-	EncryptionStatus              string        `json:"EncryptionStatus"`
+	// OdataContext string `json:"@odata.context"`
+	// OdataID                       string        `json:"@odata.id"`
+	// OdataType                     string        `json:"@odata.type"`
+	// Actions                       DriveActions  `json:"Actions"`
+	// Assembly                      OdataObject   `json:"Assembly"`
+	BlockSizeBytes  int    `json:"BlockSizeBytes"`
+	CapableSpeedGbs int    `json:"CapableSpeedGbs"`
+	CapacityBytes   int64  `json:"CapacityBytes"`
+	Description     string `json:"Description"`
+	// EncryptionAbility             string        `json:"EncryptionAbility"`
+	// EncryptionStatus              string        `json:"EncryptionStatus"`
 	FailurePredicted              bool          `json:"FailurePredicted"`
 	HotspareType                  string        `json:"HotspareType"`
 	ID                            string        `json:"Id"`
@@ -133,9 +133,9 @@ type Drive struct {
 	PredictedMediaLifeLeftPercent interface{}   `json:"PredictedMediaLifeLeftPercent"` // Adjust type based on expected content
 	Protocol                      string        `json:"Protocol"`
 	Revision                      string        `json:"Revision"`
-	RotationSpeedRPM              int           `json:"RotationSpeedRPM"`
-	SerialNumber                  string        `json:"SerialNumber"`
-	Status                        DriveStatus   `json:"Status"`
+	// RotationSpeedRPM              int           `json:"RotationSpeedRPM"`
+	SerialNumber string      `json:"SerialNumber"`
+	Status       DriveStatus `json:"Status"`
 }
 
 type DriveActions struct {
