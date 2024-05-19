@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/angelhvargas/redfishcli/pkg/client"
 	"github.com/angelhvargas/redfishcli/pkg/config"
@@ -12,11 +13,13 @@ import (
 	"github.com/angelhvargas/redfishcli/pkg/model"
 	"github.com/angelhvargas/redfishcli/pkg/xclarity"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 var (
-	drives     bool
-	configPath string
+	drives  bool
+	output  string
+	timeout time.Duration
 )
 
 // healthCmd represents the health command
@@ -27,7 +30,7 @@ var healthCmd = &cobra.Command{
 It can also return the health status of member drives if specified with the --drives flag.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var servers []config.ServerConfig
-		cfg, err := config.LoadConfigOrEnv(configPath, bmcType, bmcUsername, bmcPassword, bmcHost)
+		cfg, err := config.LoadConfigOrEnv(cfgFile, bmcType, bmcUsername, bmcPassword, bmcHost)
 		if err != nil {
 			logger.Log.Error(err.Error())
 			return
@@ -52,17 +55,27 @@ It can also return the health status of member drives if specified with the --dr
 			healthReports = append(healthReports, report)
 		}
 
-		// Marshal the health reports into JSON
-		jsonData, err := json.Marshal(healthReports)
-		if err != nil {
-			logger.Log.Error(err.Error())
-			return
+		switch output {
+		case "json":
+			jsonData, err := json.Marshal(healthReports)
+			if err != nil {
+				logger.Log.Error(err.Error())
+				return
+			}
+			fmt.Println(string(jsonData))
+		case "yaml":
+			yamlData, err := yaml.Marshal(healthReports)
+			if err != nil {
+				logger.Log.Error(err.Error())
+				return
+			}
+			fmt.Println(string(yamlData))
+		case "table":
+			printTable(healthReports)
+		default:
+			logger.Log.Errorf("Unsupported output format: %s", output)
 		}
 
-		// Print the JSON
-		fmt.Println(string(jsonData))
-
-		// Print errors if any
 		for err := range errorsCh {
 			logger.Log.Error(err.Error())
 		}
@@ -98,50 +111,94 @@ func processServer(wg *sync.WaitGroup, server config.ServerConfig, healthReports
 		errorsCh <- err
 		return
 	}
-	// get the RAID controllers list (servers can have more than one)
-	controllers, err := bmcClient.GetRAIDControllers()
-	if err != nil {
+
+	ch := make(chan *model.RAIDHealthReport, 1)
+	errCh := make(chan error, 1)
+
+	go func() {
+		report, err := gatherHealthReport(bmcClient)
+		if err != nil {
+			errCh <- err
+			return
+		}
+		ch <- report
+	}()
+
+	select {
+	case report := <-ch:
+		healthReportsCh <- report
+	case err := <-errCh:
+		errorsCh <- err
+	case <-time.After(timeout):
+		err := fmt.Errorf("timeout for server %s", server.Hostname)
 		logger.Log.Error(err.Error())
 		errorsCh <- err
-		return
+	}
+}
+
+func gatherHealthReport(bmcClient client.ServerClient) (*model.RAIDHealthReport, error) {
+	serverStatus, err := bmcClient.GetServerInfo()
+	if err != nil {
+		return nil, err
 	}
 
-	// get the data for each RAID controllers.
+	if serverStatus.PowerState != "On" {
+		return nil, fmt.Errorf("server is not powered on")
+	}
+
+	controllers, err := bmcClient.GetRAIDControllers()
+	if err != nil {
+		return nil, err
+	}
+
+	healthReport := &model.RAIDHealthReport{
+		Drives: []model.Drive{},
+	}
+
 	for _, controller := range controllers {
 		raidCtrldetails, err := bmcClient.GetRAIDControllerInfo(controller.ID)
 		if err != nil {
-			logger.Log.Error(err.Error())
-			errorsCh <- err
-			continue
+			return nil, err
 		}
 
-		healthReport := &model.RAIDHealthReport{
-			ID:           raidCtrldetails.ID,
-			Name:         raidCtrldetails.Name,
-			HealthStatus: raidCtrldetails.Status.Health,
-			State:        raidCtrldetails.Status.State,
-			Drives:       []model.Drive{},
-		}
+		healthReport.ID = raidCtrldetails.ID
+		healthReport.Name = raidCtrldetails.Name
+		healthReport.HealthStatus = raidCtrldetails.Status.Health
+		healthReport.State = raidCtrldetails.Status.State
 
 		if drives {
 			for _, driveRef := range raidCtrldetails.Drives {
 				if len(driveRef.ID) > 0 {
 					driveDetails, err := bmcClient.GetRAIDDriveDetails(driveRef.ID)
 					if err != nil {
-						logger.Log.Error(err.Error())
-						errorsCh <- err
-						continue
+						return nil, err
 					}
 					healthReport.Drives = append(healthReport.Drives, *driveDetails)
 				}
 			}
 			healthReport.DrivesCount = int8(len(raidCtrldetails.Drives))
 		}
-		healthReportsCh <- healthReport
+	}
+
+	return healthReport, nil
+}
+
+func printTable(reports []*model.RAIDHealthReport) {
+	fmt.Printf("%-20s %-20s %-20s %-20s\n", "ID", "Name", "Health Status", "State")
+	for _, report := range reports {
+		fmt.Printf("%-20s %-20s %-20s %-20s\n", report.ID, report.Name, report.HealthStatus, report.State)
+		if drives {
+			fmt.Println("Drives:")
+			for _, drive := range report.Drives {
+				fmt.Printf("  %-20s %-20s %-20s\n", drive.ID, drive.Status.Health, drive.Status.State)
+			}
+		}
 	}
 }
 
 func init() {
 	raidCmd.AddCommand(healthCmd)
 	healthCmd.PersistentFlags().BoolVarP(&drives, "drives", "", false, "return RAID controller member drives health")
+	healthCmd.PersistentFlags().StringVarP(&output, "output", "o", "json", "Output format (json, yaml, table)")
+	healthCmd.PersistentFlags().DurationVarP(&timeout, "timeout", "", 30*time.Second, "Timeout duration for each server")
 }
