@@ -112,31 +112,21 @@ func processServer(wg *sync.WaitGroup, server config.ServerConfig, healthReports
 		return
 	}
 
-	ch := make(chan *model.RAIDHealthReport, 1)
-	errCh := make(chan error, 1)
-
-	go func() {
-		report, err := gatherHealthReport(bmcClient)
-		if err != nil {
-			errCh <- err
-			return
-		}
-		ch <- report
-	}()
-
-	select {
-	case report := <-ch:
-		healthReportsCh <- report
-	case err := <-errCh:
-		errorsCh <- err
-	case <-time.After(timeout):
-		err := fmt.Errorf("timeout for server %s", server.Hostname)
+	report, err := gatherHealthReport(bmcClient, server.Hostname)
+	if err != nil {
 		logger.Log.Error(err.Error())
 		errorsCh <- err
+		// If there is an error, create a report with "unknown" state
+		report = &model.RAIDHealthReport{
+			Hostname:     server.Hostname,
+			State:        "unknown",
+			HealthStatus: "unknown",
+		}
 	}
+	healthReportsCh <- report
 }
 
-func gatherHealthReport(bmcClient client.ServerClient) (*model.RAIDHealthReport, error) {
+func gatherHealthReport(bmcClient client.ServerClient, hostname string) (*model.RAIDHealthReport, error) {
 	serverStatus, err := bmcClient.GetServerInfo()
 	if err != nil {
 		return nil, err
@@ -152,7 +142,8 @@ func gatherHealthReport(bmcClient client.ServerClient) (*model.RAIDHealthReport,
 	}
 
 	healthReport := &model.RAIDHealthReport{
-		Drives: []model.Drive{},
+		Hostname: hostname,
+		Drives:   []model.Drive{},
 	}
 
 	for _, controller := range controllers {
@@ -184,9 +175,9 @@ func gatherHealthReport(bmcClient client.ServerClient) (*model.RAIDHealthReport,
 }
 
 func printTable(reports []*model.RAIDHealthReport) {
-	fmt.Printf("%-20s %-20s %-20s %-20s\n", "ID", "Name", "Health Status", "State")
+	fmt.Printf("%-20s %-20s %-20s %-20s %-20s\n", "Hostname", "ID", "Name", "Health Status", "State")
 	for _, report := range reports {
-		fmt.Printf("%-20s %-20s %-20s %-20s\n", report.ID, report.Name, report.HealthStatus, report.State)
+		fmt.Printf("%-20s %-20s %-20s %-20s %-20s\n", report.Hostname, report.ID, report.Name, report.HealthStatus, report.State)
 		if drives {
 			fmt.Println("Drives:")
 			for _, drive := range report.Drives {
@@ -200,5 +191,5 @@ func init() {
 	raidCmd.AddCommand(healthCmd)
 	healthCmd.PersistentFlags().BoolVarP(&drives, "drives", "", false, "return RAID controller member drives health")
 	healthCmd.PersistentFlags().StringVarP(&output, "output", "o", "json", "Output format (json, yaml, table)")
-	healthCmd.PersistentFlags().DurationVarP(&timeout, "timeout", "", 30*time.Second, "Timeout duration for each server")
+	healthCmd.PersistentFlags().DurationVarP(&timeout, "timeout", "", 60*time.Second, "Timeout duration for each server")
 }

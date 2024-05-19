@@ -160,14 +160,3 @@ type DriveStatus struct {
 	HealthRollup string `json:"HealthRollup"`
 	State        string `json:"State"`
 }
-
-// RAID health
-
-type RAIDHealthReport struct {
-	ID           string  `json:"id"`
-	Name         string  `json:"Name"`
-	Drives       []Drive `json:"drives"`
-	DrivesCount  int8    `json:"DrivesCount"`
-	HealthStatus string  `json:"healthstatus"`
-	State        string  `json:"enable"`
-}

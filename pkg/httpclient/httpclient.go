@@ -18,7 +18,7 @@ type Config struct {
 // DefaultConfig provides default settings for the HTTP client.
 func DefaultConfig() Config {
 	return Config{
-		Timeout:       120 * time.Second,
+		Timeout:       30 * time.Second,
 		SkipTLSVerify: true,
 	}
 }
