@@ -18,7 +18,7 @@ type Config struct {
 // DefaultConfig provides default settings for the HTTP client.
 func DefaultConfig() Config {
 	return Config{
-		Timeout:       60 * time.Second,
+		Timeout:       30 * time.Second,
 		SkipTLSVerify: true,
 	}
 }
@@ -28,7 +28,7 @@ var DoRequest = doRequest
 
 // doRequest performs an HTTP GET request.
 func doRequest(url, username, password string, config Config) ([]byte, error) {
-	logger.Log.Printf("Doing http request to: %s", url)
+	logger.Log.Printf("API request: %s", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err

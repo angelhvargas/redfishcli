@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 
+	"github.com/angelhvargas/redfishcli/pkg/logger"
 	"gopkg.in/yaml.v3"
 )
 
@@ -34,6 +35,7 @@ type XClarityConfig struct {
 
 // LoadConfig reads a YAML configuration file and unmarshals it into a BMCConfig struct.
 func LoadConfig(path string) (*BMCConfig, error) {
+	logger.Log.Infof("Loading configuration from %s", path)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err

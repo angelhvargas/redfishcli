@@ -15,3 +15,15 @@ type ServerInfo struct {
 		Health string `json:"Health"`
 	} `json:"Status"`
 }
+
+// RAID health
+
+type RAIDHealthReport struct {
+	ID           string  `json:"id" yaml:"id"`
+	Name         string  `json:"name" yaml:"name"`
+	HealthStatus string  `json:"health_status" yaml:"health_status"`
+	State        string  `json:"state" yaml:"state"`
+	Drives       []Drive `json:"drives" yaml:"drives"`
+	DrivesCount  int8    `json:"drives_count" yaml:"drives_count"`
+	Hostname     string  `json:"hostname" yaml:"hostname"`
+}
