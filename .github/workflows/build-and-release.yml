@@ -61,32 +61,41 @@ jobs:
           path: ./release
 
       - name: Download ARM64 binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: redfishcli-arm64
           path: ./release
 
+      # - name: Create Release
+      #   id: create_release
+      #   uses: actions/create-release@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     tag_name: ${{ github.ref }}
+      #     release_name: Release ${{ github.ref }}
+      #     draft: false
+      #     prerelease: false
+
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
+          tag: ${{ github.ref_name }}
+        run: |
+          gh release create "$tag" \
+              --repo="$GITHUB_REPOSITORY" \
+              --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
+              --generate-notes
 
       - name: Upload Release Asset for X86_64
         uses: actions/upload-artifact@v4
         with:
           name: redfishcli-amd64
-          path: ./release/redfishcli
+          path: ./release
           overwrite: true
 
       - name: Upload Release Asset for ARM64
         uses: actions/upload-artifact@v4
         with:
           name: redfishcli-arm64
-          path: ./release/redfishcli
-          overwrite: true
+          path: ./release
