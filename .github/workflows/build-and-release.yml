@@ -73,20 +73,8 @@ jobs:
           tag: ${{ github.ref_name }}
         run: |
           gh release create "$tag" \
+              ./release/redfishcli-amd64#redfishcli-amd64 \
+              ./release/redfishcli-arm64#redfishcli-arm64 \
               --repo="$GITHUB_REPOSITORY" \
               --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
               --generate-notes
-
-      - name: Upload Release Asset for X86_64
-        uses: actions/upload-artifact@v4
-        with:
-          name: redfishcli-amd64
-          path: release
-          overwrite: true
-
-      # - name: Upload Release Asset for ARM64
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: redfishcli-arm64
-      #     path: release
-      #     overwrite: true
