@@ -39,9 +39,9 @@ jobs:
           sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
           mkdir -p ./build
           if [ "${{ matrix.arch }}" == "arm64" ]; then
-            CC=aarch64-linux-gnu-gcc go build -o redfishcli-${{ matrix.arch }}
+            CC=aarch64-linux-gnu-gcc go build -o ./build/redfishcli-${{ matrix.arch }}
           else
-            go build -o redfishcli-${{ matrix.arch }}
+            go build -o ./build/redfishcli-${{ matrix.arch }}
           fi
         env:
           GOARCH: ${{ matrix.arch }}
