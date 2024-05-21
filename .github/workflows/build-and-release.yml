@@ -37,6 +37,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
+          mkdir -p ./build
           if [ "${{ matrix.arch }}" == "arm64" ]; then
             CC=aarch64-linux-gnu-gcc go build -o redfishcli-${{ matrix.arch }}
           else
@@ -49,7 +50,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: redfishcli-${{ matrix.arch }}
-          path: redfishcli-${{ matrix.arch }}
+          path: ./build/redfishcli-${{ matrix.arch }}
           if-no-files-found: error
 
   release:
@@ -83,10 +84,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: redfishcli-amd64
-          path: ./release
+          path: ${{github.event.release.tag_name}}
+          overwrite: true
 
       - name: Upload Release Asset for ARM64
         uses: actions/upload-artifact@v4
         with:
           name: redfishcli-arm64
-          path: ./release
+          path: ${{github.event.release.tag_name}}
+          overwrite: true
