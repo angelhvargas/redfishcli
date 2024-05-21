@@ -6,7 +6,7 @@ on:
       - 'v*.*.*'
 
 permissions:
-  contents: write  # Ensure the token has write permissions for contents
+  contents: write
 
 jobs:
   build:
@@ -58,13 +58,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: redfishcli-amd64
-          path: ./release
+          path: ./release/
 
       - name: Download ARM64 binary
         uses: actions/download-artifact@v4
         with:
           name: redfishcli-arm64
-          path: ./release
+          path: ./release/
 
       # - name: Create Release
       #   id: create_release
@@ -91,11 +91,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: redfishcli-amd64
-          path: ./release
-          overwrite: true
+          path: ./release/
 
       - name: Upload Release Asset for ARM64
         uses: actions/upload-artifact@v4
         with:
           name: redfishcli-arm64
-          path: ./release
+          path: ./release/
