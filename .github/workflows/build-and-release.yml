@@ -60,13 +60,13 @@ jobs:
       - name: Download X86_64 binary
         uses: actions/download-artifact@v4
         with:
-          name: redfishcli-linux-amd64
+          name: redfishcli-amd64
           path: ./release/
 
       - name: Download ARM64 binary
         uses: actions/download-artifact@v4
         with:
-          name: redfishcli-linux-arm64
+          name: redfishcli-arm64
           path: ./release/
 
       - name: Create Release
@@ -83,10 +83,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: redfishcli-amd64
-          path: ./release/redfishcli-amd64-${{ github.ref }}.tar.gz
+          path: ./release/redfishcli-amd64-${{ github.ref }}
 
       - name: Upload Release Asset for ARM64
         uses: actions/upload-artifact@v4
         with:
           name: redfishcli-arm64
-          path: ./release/redfishcli-arm64-${{ github.ref }}.tar.gz
+          path: ./release/redfishcli-arm64-${{ github.ref }}
