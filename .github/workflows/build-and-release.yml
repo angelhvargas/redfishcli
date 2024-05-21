@@ -1,0 +1,91 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.21' # Specify your Go version here
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build binary
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
+          if [ "${{ matrix.arch }}" == "arm64" ]; then
+            CC=aarch64-linux-gnu-gcc make build
+          else
+            make build
+          fi
+        env:
+          GOARCH: ${{ matrix.arch }}
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: redfishcli-${{ matrix.arch }}
+          path: ./redfishcli
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download X86_64 binary
+        uses: actions/download-artifact@v2
+        with:
+          name: redfishcli-amd64
+          path: ./release
+
+      - name: Download ARM64 binary
+        uses: actions/download-artifact@v2
+        with:
+          name: redfishcli-arm64
+          path: ./release
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset for X86_64
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release/redfishcli
+          asset_name: redfishcli-amd64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Release Asset for ARM64
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release/redfishcli
+          asset_name: redfishcli-arm64
+          asset_content_type: application/octet-stream
