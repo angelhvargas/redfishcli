@@ -58,17 +58,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download X86_64 binary
+      - name: Download amd64,arm64 binaries
         uses: actions/download-artifact@v4
         with:
           name: redfishcli-amd64
-          path: ./release
-
-      - name: Download ARM64 binary
-        uses: actions/download-artifact@v4
-        with:
-          name: redfishcli-arm64
-          path: ./release
+          path: release
+          pattern: redfishcli-*
+          merge-multiple: true
+      - run: ls -R release
 
       - name: Create Release
         env:
@@ -84,12 +81,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: redfishcli-amd64
-          path: ${{github.event.release.tag_name}}
+          path: release
           overwrite: true
 
-      - name: Upload Release Asset for ARM64
-        uses: actions/upload-artifact@v4
-        with:
-          name: redfishcli-arm64
-          path: ${{github.event.release.tag_name}}
-          overwrite: true
+      # - name: Upload Release Asset for ARM64
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: redfishcli-arm64
+      #     path: release
+      #     overwrite: true
