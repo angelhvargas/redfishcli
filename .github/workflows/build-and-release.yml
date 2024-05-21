@@ -58,13 +58,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download amd64,arm64 binaries
+      - name: Download all binaries
         uses: actions/download-artifact@v4
         with:
-          name: redfishcli-amd64
-          path: release
-          pattern: redfishcli-*
-          merge-multiple: true
+          name: redfishcli-*
+          path: ./release
+
       - run: ls -R release
 
       - name: Create Release
