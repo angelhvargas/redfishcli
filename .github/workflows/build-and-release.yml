@@ -15,8 +15,8 @@ jobs:
     strategy:
       matrix:
         arch:
-        - linux-amd64
-        - linux-arm64
+        - amd64
+        - arm64
 
     steps:
       - name: Checkout code
@@ -37,7 +37,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
-          if [ "${{ matrix.arch }}" == "linux-arm64" ]; then
+          if [ "${{ matrix.arch }}" == "arm64" ]; then
             CC=aarch64-linux-gnu-gcc make build
           else
             make build
