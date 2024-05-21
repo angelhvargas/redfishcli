@@ -1,6 +1,6 @@
 # Redfish CLI
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)    [![Build and Release](https://github.com/angelhvargas/redfishcli/actions/workflows/build-and-release.yml/badge.svg?branch=main)](https://github.com/angelhvargas/redfishcli/actions/workflows/build-and-release.yml)
 
 `redfishcli` is a command-line tool designed to scan the health of baremetal servers manufactured by Lenovo or Dell. It supports servers using Lenovo XClarity Controller or Dell iDRAC 7 or greater. This tool provides a convenient way to monitor the health and status of your servers using Redfish APIs.
 
@@ -30,7 +30,7 @@
       - [Example Configuration (config.yaml)](#example-configuration-configyaml)
   - [Using the Configuration File](#using-the-configuration-file)
   - [Contributing](#contributing)
-  - [Fork the repository.](#fork-the-repository)
+  - [Fork the repository](#fork-the-repository)
   - [License](#license)
 
 ## Installation
@@ -120,14 +120,19 @@ redfishcli storage raid health --drives
 
 We welcome contributions to redfishcli. To contribute, please follow these steps:
 
-## Fork the repository.
+## Fork the repository
 
-Create a new branch (`git checkout -b feature/your-feature`).
-Commit your changes (`git commit -am 'Add new feature'`).
-Push to the branch (`git push origin feature/your-feature`).
-Create a new Pull Request.
-Please ensure your code adheres to the project's coding standards and includes appropriate tests.
+
+- Create a new branch (`git checkout -b feature/your-feature`).
+
+- Commit your changes (`git commit -am 'Add new feature'`).
+
+- Push to the branch (`git push origin feature/your-feature`).
+
+- Create a new Pull Request.
+
+- Please ensure your code adheres to the project's coding standards and includes appropriate tests.
 
 ## License
 
-redfishcli is licensed under the [![MIT License](LICENSE)]. See the LICENSE file for more information.
+redfishcli is licensed under the [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE). See the LICENSE file for more information.
