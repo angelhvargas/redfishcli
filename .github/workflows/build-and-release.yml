@@ -61,10 +61,11 @@ jobs:
       - name: Download all binaries
         uses: actions/download-artifact@v4
         with:
-          name: redfishcli-*
           path: ./release
+          pattern: redfishcli-*
+          merge-multiple: true
 
-      - run: ls -R release
+      - run: ls -R ./release
 
       - name: Create Release
         env:
