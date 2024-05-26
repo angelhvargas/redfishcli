@@ -30,13 +30,20 @@ import (
 // storageCmd represents the storage command
 var storageCmd = &cobra.Command{
 	Use:   "storage",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Manage and query storage controllers and RAID health",
+	Long: `The storage command provides functionalities to manage and query storage controllers
+and RAID health for baremetal servers using Lenovo XClarity Controller or Dell iDRAC 7 or greater.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+Usage:
+  redfishcli storage [command]
+
+Available Commands:
+  raid        Manage RAID health and details
+  controllers List and get details of storage controllers
+
+Examples:
+  redfishcli storage raid health --drives -t xclarity -u admin -p "your_password" -n 192.168.1.101
+  redfishcli storage controllers -t idrac -u root -p "your_password" -n 192.168.1.100`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("storage called")
 	},

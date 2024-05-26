@@ -56,7 +56,7 @@ func TestDoRequest(t *testing.T) {
 		assert.Contains(t, testLogHook.Entries[1].Message, "200")
 	})
 
-	t.Run("Request_with_invalid_URL", func(t *testing.T) {
+	t.Run("Request_with_invalid_Endpoint", func(t *testing.T) {
 		config := DefaultConfig()
 		_, err := DoRequest(":", "user", "pass", config)
 		require.Error(t, err)

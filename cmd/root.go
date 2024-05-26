@@ -35,25 +35,73 @@ var (
 	bmcPassword string
 	bmcHost     string
 	bmcType     string
+	output      string
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "redfishcli",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Short: "A tool to scan the health of baremetal servers using Redfish APIs",
+	Long: `redfishcli is a command-line tool designed to scan the health of baremetal servers manufactured by Lenovo or Dell.
+    
+This tool provides a convenient way to monitor the health and status of your servers using Redfish APIs. It supports servers using Lenovo XClarity Controller or Dell iDRAC 7 or greater.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
+Features:
+- Scan and report the health of baremetal servers.
+- Support for Lenovo XClarity Controller.
+- Support for Dell iDRAC 7 or greater.
+- Retrieve RAID controller health status.
+- Retrieve RAID drive details.
+- Integration with Redfish APIs.
+
+Installation:
+- From Source:
+  Ensure you have Go installed on your system, then run:
+  go get github.com/angelhvargas/redfishcli
+  cd $GOPATH/src/github.com/angelhvargas/redfishcli
+  go install
+
+- Using Precompiled Binaries:
+  Precompiled binaries for various platforms are available on the releases page. Download the binary for your platform, extract it, and place it in a directory included in your system's PATH.
+
+Usage:
+- Basic Commands:
+  Scan the RAID health of a server:
+  redfishcli storage raid health --drives -t [controller-type] -u [username] -p [password] -n [hostname]
+
+  -t: Controller type (idrac or xclarity).
+  -u: Username for the BMC.
+  -p: Password for the BMC.
+  -n: Hostname or IP address of the server.
+
+- Example Usage:
+  Scan the RAID health of a Dell server with iDRAC:
+  redfishcli storage raid health --drives -t idrac -u root -p "your_password" -n 192.168.1.100 | jq
+
+  Scan the RAID health of a Lenovo server with XClarity:
+  redfishcli storage raid health --drives -t xclarity -u admin -p "your_password" -n 192.168.1.101 | jq
+
+- Configuration:
+  You can create a configuration file to scan multiple servers without providing login parameters each time. By default, redfishcli looks for a configuration file at ~/.redfishcli/config.yaml.
+
+  Example Configuration (config.yaml):
+  servers:
+    - type: "idrac"
+      hostname: "192.168.1.100"
+      username: "root"
+      password: "your_password"
+    - type: "xclarity"
+      hostname: "192.168.1.101"
+      username: "admin"
+      password: "your_password"
+
+  To use the configuration file, simply run:
+  redfishcli storage raid health --drives
+  redfishcli will automatically load the servers listed in the configuration file and scan their health.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Command logic goes here
 		if cfgFile == "" && (bmcUsername == "" || bmcPassword == "" || bmcHost == "") {
 			cmd.Help() // Display help text
-			print("test")
 			return
 		}
 	},
@@ -75,11 +123,12 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.redfishcli.yaml)")
-	rootCmd.PersistentFlags().StringVarP(&bmcUsername, "username", "u", "root", "username for server")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.redfishcli/config.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&bmcUsername, "username", "u", "", "username for server")
 	rootCmd.PersistentFlags().StringVarP(&bmcPassword, "password", "p", "", "password for server")
 	rootCmd.PersistentFlags().StringVarP(&bmcHost, "host", "n", "", "hostname of the server")
 	rootCmd.PersistentFlags().StringVarP(&bmcType, "bmc-type", "t", "idrac", "BMC type (iDRAC or xClarity)")
+	healthCmd.PersistentFlags().StringVarP(&output, "output", "o", "json", "Output format (json, yaml, table)")
 }
 
 // initConfig reads in config file and ENV variables if set.
