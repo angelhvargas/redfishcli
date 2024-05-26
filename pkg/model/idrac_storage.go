@@ -1,7 +1,7 @@
 package model
 
 type StorageResponse struct {
-	Members []RAIDController `json:"Members"`
+	Members []StorageController `json:"Members"`
 }
 
 type StorageInfo struct {
@@ -27,13 +27,13 @@ type Storage struct {
 	// Other fields as necessary
 }
 
-// RAIDController represents a RAID controller
-type RAIDController struct {
-	ID      string        `json:"Id"`
-	Volumes []OdataObject `json:"Volumes"`
-}
+// StorageController represents a RAID controller
+// type StorageController struct {
+// 	ID      string        `json:"Id"`
+// 	Volumes []OdataObject `json:"Volumes"`
+// }
 
-type RAIDControllerDetails struct {
+type StorageControllerDetails struct {
 	ID          string        `json:"Id"`
 	Name        string        `json:"Name"`
 	Description string        `json:"Description"`
@@ -63,7 +63,7 @@ type RAIDControllerStatus struct {
 }
 
 type StorageController struct {
-	OdataID                      string                 `json:"@odata.id"`
+	ID                           string                 `json:"@odata.id"`
 	Assembly                     OdataObject            `json:"Assembly"`
 	FirmwareVersion              string                 `json:"FirmwareVersion"`
 	Identifiers                  []ControllerIdentifier `json:"Identifiers"`
@@ -77,6 +77,9 @@ type StorageController struct {
 	SupportedDeviceProtocols     []string               `json:"SupportedDeviceProtocols"`
 }
 
+type StorageControllerConfig struct {
+	Type string `json:"type"`
+}
 type ControllerIdentifier struct {
 	DurableName       string `json:"DurableName"`
 	DurableNameFormat string `json:"DurableNameFormat"`

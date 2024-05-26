@@ -8,9 +8,9 @@ import (
 )
 
 type RedfishClient struct {
-	BaseURL  string
-	Username string
-	Password string
+	BaseEndpoint string
+	Username     string
+	Password     string
 	// Add any other configurations like HTTP client
 }
 
@@ -40,12 +40,12 @@ func (c *RedfishClient) GetServerInfo() (*ServerInfo, error) {
 	return &serverInfo, nil
 }
 
-func (c *RedfishClient) buildURL(endpoint string) string {
-	return c.BaseURL + endpoint
+func (c *RedfishClient) buildEndpoint(endpoint string) string {
+	return c.BaseEndpoint + endpoint
 }
 
 func (c *RedfishClient) makeRequest(endpoint string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", c.buildURL(endpoint), nil)
+	req, err := http.NewRequest("GET", c.buildEndpoint(endpoint), nil)
 	if err != nil {
 		return nil, err
 	}

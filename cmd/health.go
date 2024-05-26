@@ -179,8 +179,10 @@ func gatherHealthReport(bmcClient client.ServerClient, hostname string) (*model.
 	if serverStatus.PowerState != "On" {
 		return nil, fmt.Errorf("host %s: server is not powered on", hostname)
 	}
-
-	controllers, err := bmcClient.GetRAIDControllers()
+	config := &model.StorageControllerConfig{
+		Type: "RAID",
+	}
+	controllers, err := bmcClient.GetStorageControllers(config)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +193,7 @@ func gatherHealthReport(bmcClient client.ServerClient, hostname string) (*model.
 	}
 
 	for _, controller := range controllers {
-		raidCtrldetails, err := bmcClient.GetRAIDControllerInfo(controller.ID)
+		raidCtrldetails, err := bmcClient.GetStorageControllerInfo(controller.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -204,7 +206,7 @@ func gatherHealthReport(bmcClient client.ServerClient, hostname string) (*model.
 		if drives {
 			for _, driveRef := range raidCtrldetails.Drives {
 				if len(driveRef.ID) > 0 {
-					driveDetails, err := bmcClient.GetRAIDDriveDetails(driveRef.ID)
+					driveDetails, err := bmcClient.GetStorageDriveDetails(driveRef.ID)
 					if err != nil {
 						return nil, err
 					}

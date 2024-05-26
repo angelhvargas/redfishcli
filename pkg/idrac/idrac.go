@@ -3,7 +3,6 @@ package idrac
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/angelhvargas/redfishcli/pkg/config"
 	"github.com/angelhvargas/redfishcli/pkg/httpclient"
@@ -25,7 +24,7 @@ func NewClient(cfg config.IDRACConfig) *Client {
 	}
 }
 
-// fetchAndUnmarshal performs a HTTP GET request to the specified URL and unmarshals the response into the given target structure.
+// fetchAndUnmarshal performs a HTTP GET request to the specified Endpoint and unmarshals the response into the given target structure.
 func (c *Client) fetchAndUnmarshal(url string, target interface{}) error {
 	body, err := httpclient.DoRequest(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig)
 	if err != nil {
@@ -88,29 +87,27 @@ func (c *Client) GetDrivesInfo() ([]model.Drive, error) {
 	return drives, nil
 }
 
-// GetRAIDControllers retrieves RAID controller information from iDRAC.
-func (c *Client) GetRAIDControllers() ([]model.RAIDController, error) {
+// GetStorageControllers retrieves RAID controller information from iDRAC.
+func (c *Client) GetStorageControllers(config *model.StorageControllerConfig) ([]model.StorageController, error) {
 	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1/Storage", c.Config.Hostname)
 	var storageResp model.StorageCollection
 	if err := c.fetchAndUnmarshal(url, &storageResp); err != nil {
 		return nil, err
 	}
 
-	var RAIDControllers []model.RAIDController
+	var StorageControllers []model.StorageController
 	for _, member := range storageResp.Members {
-		if strings.Contains(member.ID, "RAID") {
-			RAIDControllers = append(RAIDControllers, model.RAIDController{ID: member.ID})
-		}
+		StorageControllers = append(StorageControllers, model.StorageController{ID: member.ID})
 	}
 
-	return RAIDControllers, nil
+	return StorageControllers, nil
 }
 
-// Additional functions (GetRAIDControllerInfo, GetRAIDVolumeInfo, GetRAIDDriveDetails) follow the same pattern.
-// GetRAIDControllerInfo retrieves detailed information for a specific RAID controller.
-func (c *Client) GetRAIDControllerInfo(controllerId string) (*model.RAIDControllerDetails, error) {
+// Additional functions (GetStorageControllerInfo, GetRAIDVolumeInfo, GetStorageDriveDetails) follow the same pattern.
+// GetStorageControllerInfo retrieves detailed information for a specific RAID controller.
+func (c *Client) GetStorageControllerInfo(controllerId string) (*model.StorageControllerDetails, error) {
 	url := fmt.Sprintf("https://%s%s", c.Config.Hostname, controllerId)
-	var raidControllerDetails model.RAIDControllerDetails
+	var raidControllerDetails model.StorageControllerDetails
 	if err := c.fetchAndUnmarshal(url, &raidControllerDetails); err != nil {
 		return nil, err
 	}
@@ -118,16 +115,16 @@ func (c *Client) GetRAIDControllerInfo(controllerId string) (*model.RAIDControll
 }
 
 // GetRAIDVolumeInfo retrieves information for a specific RAID volume.
-func (c *Client) GetRAIDVolumeInfo(volumeURL string) (*model.RAIDVolume, error) {
+func (c *Client) GetRAIDVolumeInfo(volumeEndpoint string) (*model.RAIDVolume, error) {
 	var volume model.RAIDVolume
-	if err := c.fetchAndUnmarshal(volumeURL, &volume); err != nil {
+	if err := c.fetchAndUnmarshal(volumeEndpoint, &volume); err != nil {
 		return nil, err
 	}
 	return &volume, nil
 }
 
-// GetRAIDDriveDetails retrieves detailed information for a specific drive.
-func (c *Client) GetRAIDDriveDetails(driveUrl string) (*model.Drive, error) {
+// GetStorageDriveDetails retrieves detailed information for a specific drive.
+func (c *Client) GetStorageDriveDetails(driveUrl string) (*model.Drive, error) {
 	var drive model.Drive
 	url := fmt.Sprintf("https://%s%s", c.Config.Hostname, driveUrl)
 	if err := c.fetchAndUnmarshal(url, &drive); err != nil {

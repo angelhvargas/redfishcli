@@ -27,3 +27,8 @@ type RAIDHealthReport struct {
 	DrivesCount  int8    `json:"drives_count" yaml:"drives_count"`
 	Hostname     string  `json:"hostname" yaml:"hostname"`
 }
+
+type ControllersReport struct {
+	Controllers []StorageController
+	Hostname    string `json:"hostname" yaml:"hostname"`
+}
