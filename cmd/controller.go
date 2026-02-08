@@ -7,10 +7,8 @@ import (
 
 	"github.com/angelhvargas/redfishcli/pkg/client"
 	"github.com/angelhvargas/redfishcli/pkg/config"
-	"github.com/angelhvargas/redfishcli/pkg/idrac"
 	"github.com/angelhvargas/redfishcli/pkg/logger"
 	"github.com/angelhvargas/redfishcli/pkg/model"
-	"github.com/angelhvargas/redfishcli/pkg/xclarity"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -93,29 +91,14 @@ Example:
 func processControllers(wg *sync.WaitGroup, server config.ServerConfig, controllersReportsCh chan<- *model.ControllersReport, errorsCh chan<- error) {
 	defer wg.Done()
 
-	var bmcClient client.ServerClient
-	switch server.Type {
-	case "idrac":
-		logger.Log.Infof("Creating iDRAC client for server %s", server.Hostname)
-		bmcClient = idrac.NewClient(config.IDRACConfig{
-			BMCConnConfig: config.BMCConnConfig{
-				Hostname: server.Hostname,
-				Username: server.Username,
-				Password: server.Password,
-			},
-		})
-	case "xclarity":
-		logger.Log.Infof("Creating XClarity client for server %s", server.Hostname)
-		bmcClient = xclarity.NewClient(config.XClarityConfig{
-			BMCConnConfig: config.BMCConnConfig{
-				Hostname: server.Hostname,
-				Username: server.Username,
-				Password: server.Password,
-			},
-		})
-	default:
-		err := fmt.Errorf("unsupported BMC type: %s", server.Type)
-		logger.Log.Error(err.Error())
+	// Create client using the registry
+	bmcClient, err := client.NewClient(server.Type, config.BMCConnConfig{
+		Hostname: server.Hostname,
+		Username: server.Username,
+		Password: server.Password,
+	})
+	if err != nil {
+		logger.Log.Errorf("Error creating client for server %s: %s", server.Hostname, err)
 		errorsCh <- err
 		return
 	}

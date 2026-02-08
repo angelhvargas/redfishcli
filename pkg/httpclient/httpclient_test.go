@@ -76,6 +76,6 @@ func TestDoRequest(t *testing.T) {
 
 		require.Len(t, testLogHook.Entries, 6)
 		assert.Contains(t, testLogHook.Entries[4].Message, "500")
-		assert.Contains(t, testLogHook.Entries[5].Message, "Error: server returned status code 500")
+		assert.Contains(t, testLogHook.Entries[5].Message, "Error: HTTP 500: unexpected error")
 	})
 }

@@ -68,7 +68,7 @@ func TestIDRACClientIntegration_GetRAIDInfo(t *testing.T) {
 	client := newTestIDRACClient(t)
 
 	t.Run("GetStorageControllers", func(t *testing.T) {
-		storageConfig := *model.StorageControllerConfig{
+		storageConfig := &model.StorageControllerConfig{
 			Type: "RAID",
 		}
 		controllers, err := client.GetStorageControllers(storageConfig)

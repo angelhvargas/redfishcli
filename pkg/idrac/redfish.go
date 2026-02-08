@@ -1,5 +1,5 @@
 package idrac
 
-type IdracClient struct {
-	session string
-}
+// type IdracClient struct {
+// 	session string
+// }

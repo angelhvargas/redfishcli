@@ -27,6 +27,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	_ "github.com/angelhvargas/redfishcli/pkg/idrac"
+	_ "github.com/angelhvargas/redfishcli/pkg/xclarity"
 )
 
 var (

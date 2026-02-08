@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/angelhvargas/redfishcli/pkg/client"
 	"github.com/angelhvargas/redfishcli/pkg/config"
 	"github.com/angelhvargas/redfishcli/pkg/httpclient"
 	"github.com/angelhvargas/redfishcli/pkg/logger"
 	"github.com/angelhvargas/redfishcli/pkg/model"
+	"github.com/angelhvargas/redfishcli/pkg/request"
 )
 
 type Client struct {
@@ -155,10 +157,10 @@ func (c *Client) fetchDrive(url string) (*model.Drive, error) {
 
 func (c *Client) GetStorageControllers(config *model.StorageControllerConfig) ([]model.StorageController, error) {
 	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1/Storage", c.Config.Hostname)
-	logger.Log.Printf(url)
+	logger.Log.Println(url)
 	body, err := httpclient.DoRequest(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig)
 	if err != nil {
-		logger.Log.Errorf(err.Error())
+		logger.Log.Error(err.Error())
 		return nil, err
 	}
 	log.Printf("Raw server info response: %s\n", string(body))
@@ -203,6 +205,7 @@ func (c *Client) GetStorageControllerInfo(controllerId string) (*model.StorageCo
 
 }
 
+// GetStorageDriveDetails retrieves detailed information for a specific drive.
 func (c *Client) GetStorageDriveDetails(driveUrl string) (*model.Drive, error) {
 	url := fmt.Sprint("http://%%", c.Config.Hostname, driveUrl)
 	body, err := httpclient.DoRequest(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig)
@@ -215,4 +218,64 @@ func (c *Client) GetStorageDriveDetails(driveUrl string) (*model.Drive, error) {
 		logger.Log.Error(err.Error())
 	}
 	return &drive, nil
+}
+
+// GetPowerState retrieves the current power state of the server.
+func (c *Client) GetPowerState() (string, error) {
+	info, err := c.GetServerInfo()
+	if err != nil {
+		return "", err
+	}
+	return info.PowerState, nil
+}
+
+// SetPowerState sets the power state of the server (On, ForceOff, GracefulShutdown).
+func (c *Client) SetPowerState(state string) error {
+	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset", c.Config.Hostname)
+	payload := map[string]string{
+		"ResetType": state,
+	}
+	return request.Post(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig, payload)
+}
+
+// Reboot reboots the server (GracefulRestart).
+func (c *Client) Reboot() error {
+	return c.SetPowerState("GracefulRestart")
+}
+
+// GetBootInfo retrieves the boot information.
+func (c *Client) GetBootInfo() (*model.BootInfo, error) {
+	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1", c.Config.Hostname)
+	var info model.BootInfo
+	if err := request.FetchAndUnmarshal(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig, &info); err != nil {
+		return nil, err
+	}
+	return &info, nil
+}
+
+// SetBootOrder sets the boot order.
+func (c *Client) SetBootOrder(device string) error {
+	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1", c.Config.Hostname)
+	payload := map[string]interface{}{
+		"Boot": map[string]string{
+			"BootSourceOverrideTarget": device,
+		},
+	}
+	return request.Post(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig, payload)
+}
+
+// GetSystemEventLog retrieves the system event log.
+func (c *Client) GetSystemEventLog() ([]model.EventLogEntry, error) {
+	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1/LogServices/Standard/Entries", c.Config.Hostname)
+	var log model.EventLog
+	if err := request.FetchAndUnmarshal(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig, &log); err != nil {
+		return nil, err
+	}
+	return log.Members, nil
+}
+
+func init() {
+	client.Register("xclarity", func(cfg config.BMCConnConfig) client.ServerClient {
+		return NewClient(config.XClarityConfig{BMCConnConfig: cfg})
+	})
 }
