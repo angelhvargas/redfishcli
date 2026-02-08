@@ -1,14 +1,13 @@
 package idrac
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
 
+	"github.com/angelhvargas/redfishcli/pkg/client"
 	"github.com/angelhvargas/redfishcli/pkg/config"
 	"github.com/angelhvargas/redfishcli/pkg/httpclient"
-	"github.com/angelhvargas/redfishcli/pkg/logger"
 	"github.com/angelhvargas/redfishcli/pkg/model"
+	"github.com/angelhvargas/redfishcli/pkg/request"
 )
 
 // Client represents an iDRAC client.
@@ -25,27 +24,11 @@ func NewClient(cfg config.IDRACConfig) *Client {
 	}
 }
 
-// fetchAndUnmarshal performs a HTTP GET request to the specified URL and unmarshals the response into the given target structure.
-func (c *Client) fetchAndUnmarshal(url string, target interface{}) error {
-	body, err := httpclient.DoRequest(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig)
-	if err != nil {
-		logger.Log.Errorf("Error fetching data: %s", err)
-		return err
-	}
-
-	if err := json.Unmarshal(body, target); err != nil {
-		logger.Log.Errorf("Error unmarshalling data: %s", err)
-		return err
-	}
-
-	return nil
-}
-
 // GetServerInfo retrieves the server information from iDRAC.
 func (c *Client) GetServerInfo() (*model.ServerInfo, error) {
 	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1", c.Config.Hostname)
 	var info model.ServerInfo
-	if err := c.fetchAndUnmarshal(url, &info); err != nil {
+	if err := request.FetchAndUnmarshal(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig, &info); err != nil {
 		return nil, err
 	}
 	return &info, nil
@@ -55,7 +38,7 @@ func (c *Client) GetServerInfo() (*model.ServerInfo, error) {
 func (c *Client) GetStorageInfo() (*model.StorageInfo, error) {
 	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1/Storage", c.Config.Hostname)
 	var info model.StorageInfo
-	if err := c.fetchAndUnmarshal(url, &info); err != nil {
+	if err := request.FetchAndUnmarshal(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig, &info); err != nil {
 		return nil, err
 	}
 	return &info, nil
@@ -65,20 +48,20 @@ func (c *Client) GetStorageInfo() (*model.StorageInfo, error) {
 func (c *Client) GetDrivesInfo() ([]model.Drive, error) {
 	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1/Storage", c.Config.Hostname)
 	var storageCollection model.StorageCollection
-	if err := c.fetchAndUnmarshal(url, &storageCollection); err != nil {
+	if err := request.FetchAndUnmarshal(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig, &storageCollection); err != nil {
 		return nil, err
 	}
 
 	var drives []model.Drive
 	for _, member := range storageCollection.Members {
 		var storage model.Storage
-		if err := c.fetchAndUnmarshal(member.ID, &storage); err != nil {
+		if err := request.FetchAndUnmarshal(member.ID, c.Config.Username, c.Config.Password, c.HTTPClientConfig, &storage); err != nil {
 			return nil, err
 		}
 
 		for _, driveRef := range storage.Drives {
 			var drive model.Drive
-			if err := c.fetchAndUnmarshal(driveRef.ID, &drive); err != nil {
+			if err := request.FetchAndUnmarshal(driveRef.ID, c.Config.Username, c.Config.Password, c.HTTPClientConfig, &drive); err != nil {
 				return nil, err
 			}
 			drives = append(drives, drive)
@@ -88,50 +71,107 @@ func (c *Client) GetDrivesInfo() ([]model.Drive, error) {
 	return drives, nil
 }
 
-// GetRAIDControllers retrieves RAID controller information from iDRAC.
-func (c *Client) GetRAIDControllers() ([]model.RAIDController, error) {
+// GetStorageControllers retrieves RAID controller information from iDRAC.
+func (c *Client) GetStorageControllers(config *model.StorageControllerConfig) ([]model.StorageController, error) {
 	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1/Storage", c.Config.Hostname)
 	var storageResp model.StorageCollection
-	if err := c.fetchAndUnmarshal(url, &storageResp); err != nil {
+	if err := request.FetchAndUnmarshal(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig, &storageResp); err != nil {
 		return nil, err
 	}
 
-	var RAIDControllers []model.RAIDController
+	var StorageControllers []model.StorageController
 	for _, member := range storageResp.Members {
-		if strings.Contains(member.ID, "RAID") {
-			RAIDControllers = append(RAIDControllers, model.RAIDController{ID: member.ID})
-		}
+		StorageControllers = append(StorageControllers, model.StorageController{ID: member.ID})
 	}
 
-	return RAIDControllers, nil
+	return StorageControllers, nil
 }
 
-// Additional functions (GetRAIDControllerInfo, GetRAIDVolumeInfo, GetRAIDDriveDetails) follow the same pattern.
-// GetRAIDControllerInfo retrieves detailed information for a specific RAID controller.
-func (c *Client) GetRAIDControllerInfo(controllerId string) (*model.RAIDControllerDetails, error) {
-	url := fmt.Sprintf("https://%s%s", c.Config.Hostname, controllerId)
-	var raidControllerDetails model.RAIDControllerDetails
-	if err := c.fetchAndUnmarshal(url, &raidControllerDetails); err != nil {
+// GetStorageControllerInfo retrieves detailed information for a specific RAID controller.
+func (c *Client) GetStorageControllerInfo(controllerID string) (*model.StorageControllerDetails, error) {
+	url := fmt.Sprintf("https://%s%s", c.Config.Hostname, controllerID)
+	var raidControllerDetails model.StorageControllerDetails
+	if err := request.FetchAndUnmarshal(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig, &raidControllerDetails); err != nil {
 		return nil, err
 	}
 	return &raidControllerDetails, nil
 }
 
 // GetRAIDVolumeInfo retrieves information for a specific RAID volume.
-func (c *Client) GetRAIDVolumeInfo(volumeURL string) (*model.RAIDVolume, error) {
+func (c *Client) GetRAIDVolumeInfo(volumeEndpoint string) (*model.RAIDVolume, error) {
 	var volume model.RAIDVolume
-	if err := c.fetchAndUnmarshal(volumeURL, &volume); err != nil {
+	if err := request.FetchAndUnmarshal(volumeEndpoint, c.Config.Username, c.Config.Password, c.HTTPClientConfig, &volume); err != nil {
 		return nil, err
 	}
 	return &volume, nil
 }
 
-// GetRAIDDriveDetails retrieves detailed information for a specific drive.
-func (c *Client) GetRAIDDriveDetails(driveUrl string) (*model.Drive, error) {
+// GetStorageDriveDetails retrieves detailed information for a specific drive.
+func (c *Client) GetStorageDriveDetails(driveURL string) (*model.Drive, error) {
 	var drive model.Drive
-	url := fmt.Sprintf("https://%s%s", c.Config.Hostname, driveUrl)
-	if err := c.fetchAndUnmarshal(url, &drive); err != nil {
+	url := fmt.Sprintf("https://%s%s", c.Config.Hostname, driveURL)
+	if err := request.FetchAndUnmarshal(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig, &drive); err != nil {
 		return nil, err
 	}
 	return &drive, nil
+}
+
+// GetPowerState retrieves the current power state of the server.
+func (c *Client) GetPowerState() (string, error) {
+	info, err := c.GetServerInfo()
+	if err != nil {
+		return "", err
+	}
+	return info.PowerState, nil
+}
+
+// SetPowerState sets the power state of the server (On, ForceOff, GracefulShutdown).
+func (c *Client) SetPowerState(state string) error {
+	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset", c.Config.Hostname)
+	payload := map[string]string{
+		"ResetType": state,
+	}
+	return request.Post(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig, payload)
+}
+
+// Reboot reboots the server (GracefulRestart).
+func (c *Client) Reboot() error {
+	return c.SetPowerState("GracefulRestart")
+}
+
+// GetBootInfo retrieves the boot information.
+func (c *Client) GetBootInfo() (*model.BootInfo, error) {
+	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1", c.Config.Hostname)
+	var info model.BootInfo
+	if err := request.FetchAndUnmarshal(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig, &info); err != nil {
+		return nil, err
+	}
+	return &info, nil
+}
+
+// SetBootOrder sets the boot order (e.g., PxE, Hdd, Cd).
+func (c *Client) SetBootOrder(device string) error {
+	url := fmt.Sprintf("https://%s/redfish/v1/Systems/System.Embedded.1", c.Config.Hostname)
+	payload := map[string]interface{}{
+		"Boot": map[string]string{
+			"BootSourceOverrideTarget": device,
+		},
+	}
+	return request.Post(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig, payload)
+}
+
+// GetSystemEventLog retrieves the system event log.
+func (c *Client) GetSystemEventLog() ([]model.EventLogEntry, error) {
+	url := fmt.Sprintf("https://%s/redfish/v1/Managers/iDRAC.Embedded.1/LogServices/ Sel/Entries", c.Config.Hostname)
+	var log model.EventLog
+	if err := request.FetchAndUnmarshal(url, c.Config.Username, c.Config.Password, c.HTTPClientConfig, &log); err != nil {
+		return nil, err
+	}
+	return log.Members, nil
+}
+
+func init() {
+	client.Register("idrac", func(cfg config.BMCConnConfig) client.ServerClient {
+		return NewClient(config.IDRACConfig{BMCConnConfig: cfg})
+	})
 }

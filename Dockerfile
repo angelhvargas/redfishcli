@@ -1,4 +1,4 @@
-FROM golang:1.22-bookworm
+FROM golang:1.24
 
 WORKDIR /usr/src/redfishcli
 
@@ -8,6 +8,7 @@ RUN go mod download && go mod verify
 
 COPY . .
 
-RUN go build -v -o /usr/local/bin/ ./...
+RUN go build -v -o /usr/local/bin/redfishcli ./...
 
-
+ENTRYPOINT ["redfishcli"]
+CMD ["--help"]

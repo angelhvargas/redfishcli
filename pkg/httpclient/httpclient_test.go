@@ -56,7 +56,7 @@ func TestDoRequest(t *testing.T) {
 		assert.Contains(t, testLogHook.Entries[1].Message, "200")
 	})
 
-	t.Run("Request_with_invalid_URL", func(t *testing.T) {
+	t.Run("Request_with_invalid_Endpoint", func(t *testing.T) {
 		config := DefaultConfig()
 		_, err := DoRequest(":", "user", "pass", config)
 		require.Error(t, err)
@@ -76,6 +76,6 @@ func TestDoRequest(t *testing.T) {
 
 		require.Len(t, testLogHook.Entries, 6)
 		assert.Contains(t, testLogHook.Entries[4].Message, "500")
-		assert.Contains(t, testLogHook.Entries[5].Message, "Error: server returned status code 500")
+		assert.Contains(t, testLogHook.Entries[5].Message, "Error: HTTP 500: unexpected error")
 	})
 }

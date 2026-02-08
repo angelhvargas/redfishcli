@@ -62,19 +62,51 @@ func LoadConfigFromDefaultPath() (*BMCConfig, error) {
 
 // LoadConfigOrEnv loads the configuration from the specified path, or from environment variables if the path is empty.
 func LoadConfigOrEnv(path, bmcType, username, password, hostname string) (*BMCConfig, error) {
+	var cfg *BMCConfig
+	var err error
+
 	if path != "" {
-		return LoadConfig(path)
+		cfg, err = LoadConfig(path)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		cfg = &BMCConfig{
+			Servers: []ServerConfig{},
+		}
 	}
 
-	server := ServerConfig{
-		Type:     bmcType,
-		Hostname: hostname,
-		Username: username,
-		Password: password,
+	// Override with CLI or environment variables if necessary
+	for i, server := range cfg.Servers {
+		if server.Username == "" {
+			cfg.Servers[i].Username = username
+			if envUser := os.Getenv("BMC_USERNAME"); envUser != "" {
+				cfg.Servers[i].Username = envUser
+			}
+		}
+		if server.Password == "" {
+			cfg.Servers[i].Password = password
+			if envPass := os.Getenv("BMC_PASSWORD"); envPass != "" {
+				cfg.Servers[i].Password = envPass
+			}
+		}
 	}
 
-	cfg := &BMCConfig{
-		Servers: []ServerConfig{server},
+	// Add a single server configuration if CLI flags are provided and no servers are defined
+	if len(cfg.Servers) == 0 && hostname != "" {
+		server := ServerConfig{
+			Type:     bmcType,
+			Hostname: hostname,
+			Username: username,
+			Password: password,
+		}
+		if envUser := os.Getenv("BMC_USERNAME"); envUser != "" {
+			server.Username = envUser
+		}
+		if envPass := os.Getenv("BMC_PASSWORD"); envPass != "" {
+			server.Password = envPass
+		}
+		cfg.Servers = append(cfg.Servers, server)
 	}
 
 	return cfg, nil

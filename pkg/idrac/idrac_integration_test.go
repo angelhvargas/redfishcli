@@ -11,6 +11,7 @@ import (
 
 	"github.com/angelhvargas/redfishcli/pkg/config"
 	"github.com/angelhvargas/redfishcli/pkg/httpclient"
+	"github.com/angelhvargas/redfishcli/pkg/model"
 	"github.com/stretchr/testify/require"
 )
 
@@ -66,8 +67,11 @@ func TestIDRACClientIntegration(t *testing.T) {
 func TestIDRACClientIntegration_GetRAIDInfo(t *testing.T) {
 	client := newTestIDRACClient(t)
 
-	t.Run("GetRAIDControllers", func(t *testing.T) {
-		controllers, err := client.GetRAIDControllers()
+	t.Run("GetStorageControllers", func(t *testing.T) {
+		storageConfig := &model.StorageControllerConfig{
+			Type: "RAID",
+		}
+		controllers, err := client.GetStorageControllers(storageConfig)
 		require.NoError(t, err)
 		require.NotEmpty(t, controllers, "No RAID controllers found")
 
@@ -76,14 +80,14 @@ func TestIDRACClientIntegration_GetRAIDInfo(t *testing.T) {
 
 			// Add assertions for other fields in the controller if necessary
 
-			t.Run("GetRAIDControllerInfo", func(t *testing.T) {
-				controllerInfo, err := client.GetRAIDControllerInfo(controller.ID)
+			t.Run("GetStorageControllerInfo", func(t *testing.T) {
+				controllerInfo, err := client.GetStorageControllerInfo(controller.ID)
 				require.NoError(t, err)
 				require.NotNil(t, controllerInfo)
 
-				t.Run("GetRAIDDriveDetails", func(t *testing.T) {
+				t.Run("GetStorageDriveDetails", func(t *testing.T) {
 					for _, driveRef := range controllerInfo.Drives {
-						drive, err := client.GetRAIDDriveDetails(driveRef.ID)
+						drive, err := client.GetStorageDriveDetails(driveRef.ID)
 						require.NoError(t, err)
 						require.NotNil(t, drive)
 						require.Equal(t, "OK", drive.Status.Health, "RAID drive health is not OK")

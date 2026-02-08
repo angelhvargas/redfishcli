@@ -136,3 +136,15 @@ We welcome contributions to redfishcli. To contribute, please follow these steps
 ## License
 
 redfishcli is licensed under the [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE). See the LICENSE file for more information.
+## Release Process
+
+This project uses [GoReleaser](https://goreleaser.com/) and GitHub Actions for automated releases.
+
+To create a new release:
+1.  Ensure all changes are committed and pushed to `main`.
+2.  Create and push a new tag:
+    ```bash
+    git tag -a v1.0.0 -m "Release v1.0.0"
+    git push origin v1.0.0
+    ```
+3.  GitHub Actions will automatically build the binaries, create a release, and attach the artifacts.
